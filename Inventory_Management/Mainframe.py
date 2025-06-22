@@ -7,7 +7,7 @@ import hashlib
 def hash_password(password):
     return hashlib.sha256(password.encode()).hexdigest()
 
-def setup_usersdatabase():
+def setup_database():
     conn = sqlite3.connect('Databases/inventory_db.db')
     cursor = conn.cursor()
     # Create the users table if it doesn't exist
@@ -80,7 +80,7 @@ class ProjectFrame(tk.Tk):
         self.state('zoomed')  # Start maximized
         self.frames = {}
         self.setup_frames()
-        self.show_frame("LoginPage")
+        self.show_frame("HomePage")
 
     def setup_frames(self):
         self.frames["LoginPage"] = LoginPage(self, self)
@@ -103,15 +103,15 @@ class LoginPage(tk.Frame):
         super().__init__(parent, bg='lightblue')
         self.controller = controller
 
-        # Configure grid for stretching
+        # Configure grid
         for r in range(7):
             self.grid_rowconfigure(r, weight=1)
             for c in range(3):
                 self.grid_columnconfigure(c, weight=1)
 
         # grid layout for the frame
-        for r in range(7):  # 0 to 6 (your rows)
-            for c in range(3):  # 0 to 2 (your columns)
+        for r in range(7):  
+            for c in range(3):  
                 cell = tk.Frame(self, bg = 'lightblue',bd=1, relief="solid")
                 cell.grid(row=r, column=c, sticky="nsew")
 
@@ -177,31 +177,43 @@ class HomePage(tk.Frame):
     def __init__(self, parent, controller, role):
         self.shift_icon = ImageTk.PhotoImage(Image.open("images/shift.png").resize((24, 24)))
         self.income_icon = ImageTk.PhotoImage(Image.open("images/income.png").resize((24, 24)))
+        self.delivery_icon = ImageTk.PhotoImage(Image.open("images/delivery.png").resize((24, 24)))
         self.inventory_icon = ImageTk.PhotoImage(Image.open("images/inventory.png").resize((24, 24)))
         self.transactions_icon = ImageTk.PhotoImage(Image.open("images/transaction.png").resize((24, 24)))
         self.logout_icon = ImageTk.PhotoImage(Image.open("images/logout.png").resize((24, 24)))
         
+        #buttons setup
+        self.buttons = [
+            ("Start Shift", self.shift_icon, lambda: self.Onclick(1)),
+            ("Income", self.income_icon, lambda: self.Onclick(2)),
+            ("Delivery", self.delivery_icon, lambda: self.Onclick(3)),
+            ("Inventory", self.inventory_icon, lambda: self.Onclick(4)),
+            ("Transactions", self.transactions_icon, lambda: self.Onclick(5)),
+            ("Logout", self.logout_icon, lambda: self.Onclick(6))
+        ]
+        
         super().__init__(parent, bg='lightblue')
         self.role = role
         self.controller = controller
-        
-        #grid layout for the frame
-        for r in range(2):  
-            for c in range(1): 
-                cell = tk.Frame(self, bg = 'lightblue',bd=1, relief="solid")
+
+        # grid layout for the frame
+        for r in range(2):
+            for c in range(1):
+                cell = tk.Frame(self, bg='lightblue', bd=1, relief="solid")
                 cell.grid(row=r, column=c, sticky="nsew")
-                
+
         # Configure grid
-        for r in range(2): 
-            self.grid_rowconfigure(r, weight=0)  # Navigation bar (fixed height)
+        for r in range(2):
+            self.grid_rowconfigure(r, weight=0)
             w = 0
-            for c in range(1):  # 0 to 2 (your columns)
-                self.grid_columnconfigure(c, weight= w)
-                w+=1
+            for c in range(1):
+                self.grid_columnconfigure(c, weight=w)
+                w += 1
+
         # Navigation bar
         if self.role == "admin":
             self.admin_navbar()
-        elif self.role == "user":
+        else:
             self.user_navbar()
 
         # Main content area (container)
@@ -211,21 +223,21 @@ class HomePage(tk.Frame):
         self.grid_columnconfigure(0, weight=1)
         self.current_page = None
 
+        self.show_content(DefaultPage)  
+
     def admin_navbar(self):
         nav_frame = tk.Frame(self, bg='gray')
         nav_frame.grid(row=0, column=0, sticky='ew')
-        tk.Button(nav_frame, text="Start Shift", image=self.shift_icon, compound='left', command=lambda: self.Onclick(1)).pack(side='left', padx=5, pady=5)
-        tk.Button(nav_frame, text="Income", image=self.income_icon, compound='left', command=lambda: self.Onclick(2)).pack(side='left', padx=5, pady=5)
-        tk.Button(nav_frame, text="Inventory", image=self.inventory_icon, compound='left', command=lambda: self.Onclick(3)).pack(side='left', padx=5, pady=5)
-        tk.Button(nav_frame, text="Transactions", image=self.transactions_icon, compound='left', command=lambda: self.Onclick(4)).pack(side='left', padx=5, pady=5)
-        tk.Button(nav_frame, text="Logout", image=self.logout_icon, compound='left', command=lambda: self.Onclick(5)).pack(side='left', padx=5, pady=5)
+        for text, icon, cmd in self.buttons:
+            tk.Button(nav_frame, text=text, image=icon, compound='left', command=cmd).pack(side='left', padx=5, pady=5)
 
     def user_navbar(self):
         nav_frame = tk.Frame(self, bg='gray')
         nav_frame.grid(row=0, column=0, sticky='ew')
-        tk.Button(nav_frame, text="Start Shift", image=self.shift_icon, compound='left', command=lambda: self.Onclick(1)).pack(side='left', padx=5, pady=5)
-        tk.Button(nav_frame, text="Logout", image=self.logout_icon, compound='left', command=lambda: self.Onclick(5)).pack(side='left', padx=5, pady=5)
-
+        for text, icon, cmd in self.buttons:
+            if text in ("Start Shift", "Logout"):
+                tk.Button(nav_frame, text=text, image=icon, compound='left', command=cmd).pack(side='left', padx=5, pady=5)
+        
     def Onclick(self, number):
         def start_shift(shift_type):
             messagebox.showinfo("Start Shift", f"{shift_type} Shift started successfully!")
@@ -245,22 +257,37 @@ class HomePage(tk.Frame):
                 menu.add_command(label="Monthly income", command=lambda: income_report("Monthly"))
                 menu.add_command(label="Yearly income", command=lambda: income_report("Yearly"))
                 menu.tk_popup(self.winfo_pointerx(), self.winfo_pointery())
-            case 3:
-                self.show_content(InventoryPage)
+            case 3: 
+                self.show_content(DeliveryPage) 
             case 4:
-                self.show_content(TransactionsPage)
+                self.show_content(InventoryPage)
             case 5:
+                self.show_content(TransactionsPage)
+            case 6:
                 if messagebox.askyesno("Logout", "Are you sure you want to logout?"):
-                    self.controller.show_frame("LoginPage")  # Switch back to login page 
-            
+                    self.controller.show_frame("LoginPage")  
+                    
     def show_content(self, PageClass):
-        # Remove current page if exists
         if self.current_page:
             self.current_page.destroy()
-        # Add new page
         self.current_page = PageClass(self.main_content)
         self.current_page.pack(fill='both', expand=True)
-
+        
+class DefaultPage(tk.Frame):
+    def __init__(self, parent):
+        super().__init__(parent, bg='white')
+        for r in range(3):
+            self.grid_rowconfigure(r, weight=1)
+            for c in range(3):
+                self.grid_columnconfigure(c, weight=1)
+                cell = tk.Frame(self, bg = "#91C4EE", bd=1, relief="solid")
+                cell.grid(row=r, column=c, sticky="nsew")
+                
+class DeliveryPage(tk.Frame):
+    def __init__(self, parent):
+        super().__init__(parent, bg='white')
+        tk.Label(self, text="Delivery Content").pack()
+        
 class DashboardPage(tk.Frame):
     def __init__(self, parent):
         super().__init__(parent, bg='white')
@@ -293,6 +320,6 @@ class TransactionsPage(tk.Frame):
             tree.insert('', 'end', values=(f'A{i}', f'B{i}', f'C{i}'))
 
 # --- Main program ---
-setup_usersdatabase()
+setup_database()
 projectframe = ProjectFrame()
 projectframe.mainloop()
