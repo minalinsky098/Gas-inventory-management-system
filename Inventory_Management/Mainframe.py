@@ -47,7 +47,7 @@ def setup_database():
 def check_login(username, password):
     conn = sqlite3.connect('Databases/inventory_db.db')
     cursor = conn.cursor()
-    cursor.execute('SELECT id, password_hash FROM users WHERE username=?', (username,))
+    cursor.execute('SELECT user_id, password_hash FROM users WHERE username=?', (username,))
     dbrow = cursor.fetchone()
     conn.close()
     if dbrow and hash_password(password) == dbrow[1]:
