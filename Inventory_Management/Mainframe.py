@@ -1,6 +1,7 @@
 import tkinter as tk
 from PIL import Image, ImageTk 
 from tkinter import messagebox, simpledialog, ttk
+import datetime
 import sqlite3
 import hashlib
 
@@ -10,7 +11,8 @@ def hash_password(password):
 def setup_database():
     conn = sqlite3.connect('Databases/inventory_db.db')
     cursor = conn.cursor()
-    # Create the users table if it doesn't exist
+    # Create db tables 
+    
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS users (
             user_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -18,6 +20,18 @@ def setup_database():
             password_hash TEXT NOT NULL
         )
     ''')
+    
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS transactions (
+            transaction_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            shift_id INTEGER NOT NULL,
+            pump_id INTEGER NOT NULL,
+            Volume REAL NOT NULL,
+            Date DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (shift_id) REFERENCES shifts(shift_id)
+        )
+    ''')
+    
     # Check if the table is empty
     cursor.execute('SELECT COUNT(*) FROM users')
     if cursor.fetchone()[0] == 0:
@@ -195,6 +209,8 @@ class HomePage(tk.Frame):
         super().__init__(parent, bg='lightblue')
         self.role = role
         self.controller = controller
+        self.shift_started = False
+        self.shift_button = None
 
         # grid layout for the frame
         for r in range(2):
@@ -211,6 +227,7 @@ class HomePage(tk.Frame):
                 w += 1
 
         # Navigation bar
+        
         if self.role == "admin":
             self.admin_navbar()
         else:
@@ -229,27 +246,43 @@ class HomePage(tk.Frame):
         nav_frame = tk.Frame(self, bg='gray')
         nav_frame.grid(row=0, column=0, sticky='ew')
         for text, icon, cmd in self.buttons:
-            tk.Button(nav_frame, text=text, image=icon, compound='left', command=cmd).pack(side='left', padx=5, pady=5)
+            if text == "Start Shift":
+                self.shift_button = tk.Button(nav_frame, text=text, image=icon, compound='left', command=cmd)
+                self.shift_button.pack(side='left', padx=5, pady=5)
+            else:
+                tk.Button(nav_frame, text=text, image=icon, compound='left', command=cmd).pack(side='left', padx=5, pady=5)
+
+            
+    def toggle_shift(self):
+        now = datetime.datetime.now().strftime("%I:%M:%S:%p")
+        shift_type = datetime.datetime.now().strftime("%p")
+            
+        if not self.shift_started:
+            messagebox.showinfo("Start Shift", f"{shift_type} Shift started successfully at {now}")
+            self.shift_button.config(text="End Shift")
+            self.shift_started = True
+        else:
+            messagebox.showinfo("End shift",f"{shift_type} Shift ended at {now}")
+            self.shift_button.config(text="Start Shift")
+            self.shift_started = False
 
     def user_navbar(self):
         nav_frame = tk.Frame(self, bg='gray')
         nav_frame.grid(row=0, column=0, sticky='ew')
         for text, icon, cmd in self.buttons:
-            if text in ("Start Shift", "Logout"):
+            if text == "Start Shift":
+                self.shift_button = tk.Button(nav_frame, text=text, image=icon, compound='left', command=cmd)
+                self.shift_button.pack(side='left', padx=5, pady=5)
+            elif text == "Logout":
                 tk.Button(nav_frame, text=text, image=icon, compound='left', command=cmd).pack(side='left', padx=5, pady=5)
         
     def Onclick(self, number):
-        def start_shift(shift_type):
-            messagebox.showinfo("Start Shift", f"{shift_type} Shift started successfully!")
         def income_report(time_period):
             messagebox.showinfo("Income Report", "Income report generated successfully!")
             self.show_content(DashboardPage)
         match number:
             case 1:
-                menu = tk.Menu(self, tearoff=0)
-                menu.add_command(label="AM shift", command=lambda: start_shift("AM"))
-                menu.add_command(label="PM shift", command=lambda: start_shift("PM"))
-                menu.tk_popup(self.winfo_pointerx(), self.winfo_pointery())
+                self.toggle_shift()
             case 2:
                 menu = tk.Menu(self, tearoff=0)
                 menu.add_command(label="Daily income", command=lambda: income_report("Daily"))
@@ -304,10 +337,11 @@ class TransactionsPage(tk.Frame):
         # Main content area with a scrollable table
 
         # Example: Scrollable table using ttk.Treeview
-        tree = ttk.Treeview(self, columns=('A', 'B', 'C'), show='headings')
-        tree.heading('A', text='Column A')
-        tree.heading('B', text='Column B')
-        tree.heading('C', text='Column C')
+        columns = ('Pump number', 'Fuel_type', 'Volume', 'Price', 'Date')
+        tree = ttk.Treeview(self, columns=columns, show='headings')
+        for col in columns:
+            tree.heading(col, text=col)
+            tree.column(col, anchor='center', width=100)
         tree.pack(side='left', fill='both', expand=True)
 
         # Add vertical scrollbar
@@ -316,8 +350,13 @@ class TransactionsPage(tk.Frame):
         scrollbar.pack(side='right', fill='y')
 
         # Example data
-        for i in range(50):
-            tree.insert('', 'end', values=(f'A{i}', f'B{i}', f'C{i}'))
+        connect = sqlite3.connect('Databases/inventory_db.db')
+        cursor = connect.cursor()
+        cursor.execute('SELECT * FROM transactions')
+        rows = cursor.fetchall()
+        connect.close()
+        for values in rows:
+            tree.insert('', 'end', values=values)
 
 # --- Main program ---
 setup_database()
