@@ -1,5 +1,5 @@
 # Gas-inventory-management-system
-Project for an inventory management system for a gas station
+Beginner Project for an inventory management system for a gas station
 
 initial users and passwords:
 admin - admin 123
