@@ -22,13 +22,25 @@ def setup_database():
     ''')
     
     cursor.execute('''
+        CREATE TABLE IF NOT EXISTS shift (
+            shift_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            shift_date DATETIME,
+            shift_type TEXT,
+            shift_start_time DATETIME,
+            shift_end_time DATETIME,
+            FOREIGN KEY (user_id) REFERENCES users(user_id)
+        )
+    ''')
+    
+    cursor.execute('''
         CREATE TABLE IF NOT EXISTS transactions (
             transaction_id INTEGER PRIMARY KEY AUTOINCREMENT,
             shift_id INTEGER NOT NULL,
             pump_id INTEGER NOT NULL,
             Volume REAL NOT NULL,
             Date DATETIME DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (shift_id) REFERENCES shifts(shift_id)
+            FOREIGN KEY (shift_id) REFERENCES shift(shift_id)
         )
     ''')
     
@@ -102,14 +114,14 @@ class ProjectFrame(tk.Tk):
         for frame in self.frames.values():
             frame.place(relwidth=1, relheight=1)
  
-    def show_frame(self, name, role = None):
+    def show_frame(self, name, role = None, user_id = None):
         for frame in self.frames.values():
             frame.place_forget()
         if name == "HomePage":
             # Recreate HomePage with the correct role
             if "HomePage" in self.frames:
                 self.frames["HomePage"].destroy()
-            self.frames["HomePage"] = HomePage(self, self, role)
+            self.frames["HomePage"] = HomePage(self, self, role, user_id)
         self.frames[name].place(relwidth=1, relheight=1)
 
 class LoginPage(tk.Frame):
@@ -180,7 +192,7 @@ class LoginPage(tk.Frame):
             else:
                 role = "user"
             messagebox.showinfo(f"Access granted!!",f"Welcome, {username}!")
-            self.controller.show_frame("HomePage", role = role)  # Example: switch to another frame
+            self.controller.show_frame("HomePage", role = role, user_id = user_id)  # Example: switch to another frame
         else:
             messagebox.showerror("Access denied", "Invalid username or password.")
         self.usernametextbox.delete(0, tk.END)
@@ -188,14 +200,13 @@ class LoginPage(tk.Frame):
         self.usernametextbox.focus_set()
 
 class HomePage(tk.Frame):
-    def __init__(self, parent, controller, role):
+    def __init__(self, parent, controller, role, user_id):
         self.shift_icon = ImageTk.PhotoImage(Image.open("images/shift.png").resize((24, 24)))
         self.income_icon = ImageTk.PhotoImage(Image.open("images/income.png").resize((24, 24)))
         self.delivery_icon = ImageTk.PhotoImage(Image.open("images/delivery.png").resize((24, 24)))
         self.inventory_icon = ImageTk.PhotoImage(Image.open("images/inventory.png").resize((24, 24)))
         self.transactions_icon = ImageTk.PhotoImage(Image.open("images/transaction.png").resize((24, 24)))
         self.logout_icon = ImageTk.PhotoImage(Image.open("images/logout.png").resize((24, 24)))
-        
         #buttons setup
         self.buttons = [
             ("Start Shift", self.shift_icon, lambda: self.Onclick(1)),
@@ -208,6 +219,7 @@ class HomePage(tk.Frame):
         
         super().__init__(parent, bg='lightblue')
         self.role = role
+        self.user_id = user_id
         self.controller = controller
         self.shift_started = False
         self.shift_button = None
@@ -232,6 +244,7 @@ class HomePage(tk.Frame):
             self.admin_navbar()
         else:
             self.user_navbar()
+            self.user_id = 2
 
         # Main content area (container)
         self.main_content = tk.Frame(self, bg='white')
@@ -251,22 +264,37 @@ class HomePage(tk.Frame):
                 self.shift_button.pack(side='left', padx=5, pady=5)
             else:
                 tk.Button(nav_frame, text=text, image=icon, compound='left', command=cmd).pack(side='left', padx=5, pady=5)
-
             
     def toggle_shift(self):
-        now = datetime.datetime.now().strftime("%I:%M:%S:%p")
+        timenow = datetime.datetime.now().strftime("%I:%M:%S:%p")
+        shift_date = datetime.datetime.now().strftime("%Y-%m-%d")
         shift_type = datetime.datetime.now().strftime("%p")
-            
+        user_id = self.user_id
+        conn = sqlite3.connect('Databases/inventory_db.db')
+        cursor = conn.cursor()
+        
         if not self.shift_started:
-            messagebox.showinfo("Start Shift", f"{shift_type} Shift started successfully at {now}")
+            cursor.execute('''INSERT INTO shift(user_id, shift_date, shift_type, shift_start_time) 
+                VALUES (?, ?, ?, ?)''',(user_id, shift_date, shift_type, timenow))
+            conn.commit()  
+            messagebox.showinfo("Start Shift", f"{shift_type} Shift started successfully at {timenow}")
             self.shift_button.config(text="End Shift")
-            self.shift_started = True
+            self.shift_started = True  
             self.show_content(DefaultPage, userlogin = True)
+            
         else:
-            messagebox.showinfo("End shift",f"{shift_type} Shift ended at {now}")
+            cursor.execute('SELECT shift_id FROM shift WHERE user_id = ? AND shift_end_time IS NULL ORDER BY shift_id DESC LIMIT 1', (user_id,))
+            row = cursor.fetchone()
+            if row:
+                shift_id = row[0]
+                cursor.execute('UPDATE shift SET shift_end_time = ? WHERE shift_id = ?', (timenow, shift_id))
+                conn.commit()
+            messagebox.showinfo("End shift",f"{shift_type} Shift ended at {timenow}")
             self.shift_button.config(text="Start Shift")
             self.shift_started = False
             self.show_content(DefaultPage, userlogin = False)
+            
+        conn.close()
 
     def user_navbar(self):
         nav_frame = tk.Frame(self, bg='gray')
@@ -305,14 +333,17 @@ class HomePage(tk.Frame):
     def show_content(self, PageClass, *args, **kwargs):
         if self.current_page:
             self.current_page.destroy()
+        if PageClass == DefaultPage:
+            kwargs['user_id'] = self.user_id
         self.current_page = PageClass(self.main_content, *args, **kwargs)
         self.current_page.pack(fill='both', expand=True)
         
 class DefaultPage(tk.Frame):
-    def __init__(self, parent, userlogin = False):
+    def __init__(self, parent, userlogin = False, user_id = None):
         super().__init__(parent, bg='white')
 
         self.userlogin = userlogin
+        self.user_id = user_id
         for r in range(3):
             self.grid_rowconfigure(r, weight=1, minsize=100)
             for c in range(3):
@@ -320,29 +351,57 @@ class DefaultPage(tk.Frame):
                 cell = tk.Frame(self, bg="#91C4EE", bd=1, relief="solid")
                 cell.grid(row=r, column=c, sticky="nsew")
 
-        # Create a container frame at the bottom right cell
+        # Container frame on lower right corner
         bottom_right = tk.Frame(self, bg='white', width=50)
         bottom_right.grid(row=2, column=2, sticky="se", padx=10, pady=10)
-        bottom_right.grid_propagate(False)  # Prevent resizing to fit contents
+        bottom_right.grid_propagate(False)  
 
         # Stack the labels inside the container frame
+        self.last_logout_label = tk.Label(bottom_right, font=("Comic Sans MS", 16), bg='white')
+        self.last_logout_label.pack(anchor="e")
         self.date_label = tk.Label(bottom_right, font=("Comic Sans MS", 16), bg='white')
         self.date_label.pack(anchor="e")
         self.clock_label = tk.Label(bottom_right, font=("Comic Sans MS", 16), bg='white')
         self.clock_label.pack(anchor="e")
         self.updateclock()
         
+        
     def updateclock(self):
+        conn = sqlite3.connect('Databases/inventory_db.db')
+        cursor = conn.cursor()
         monthnow = datetime.datetime.now().strftime("%B")
         weeknow = datetime.datetime.now().strftime("%A")
         daynow = datetime.datetime.now().strftime("%d")
         yearnow = datetime.datetime.now().strftime("%Y")
         timenow = datetime.datetime.now().strftime("%I:%M:%S %p")
-        self.date_label.config(text=f"{weeknow}, {monthnow} {daynow}, {yearnow}")  
-        self.clock_label.config(text = timenow) 
-        if(self.userlogin):
-            self.date_label.after(1000, self.updateclock)
-            self.clock_label.after(1000, self.updateclock)
+        self.date_label.config(text=f"Current Date: {weeknow}, {monthnow} {daynow}, {yearnow}")  
+        self.clock_label.config(text = f"Current Time: {timenow}") 
+        last_logout_date = "N/A"
+        last_logout_time = "N/A"
+        cursor.execute("SELECT shift_id FROM shift WHERE shift_end_time IS NOT NULL ORDER BY shift_id DESC LIMIT 1")
+        row = cursor.fetchone()
+        last_logout = "N/A"
+        if row:
+            latest_shift_id = row[0]
+            # Now get the shift_end_time for that shift_id
+            cursor.execute("SELECT shift_end_time, shift_date FROM shift WHERE shift_id = ?", (latest_shift_id,))
+            row2 = cursor.fetchone()
+            
+            if row2 and row2[0]:
+                try:
+                    lasttime = datetime.datetime.strptime(row2[0], "%I:%M:%S:%p")
+                    lastdate = datetime.datetime.strptime(row2[1], "%Y-%m-%d")
+                    last_logout_date = lastdate.strftime("%A, %B %d, %Y")
+                    last_logout_time = lasttime.strftime("%I:%M:%S %p")
+                except Exception as e:
+                    last_logout_time = str(row2[0])
+                    last_logout_date = str(row2[1])
+                    print("Error", e)
+        self.last_logout_label.config(text=f"Last Logout: {last_logout_date} at {last_logout_time}")
+        conn.close()
+        if self.userlogin:
+            self.last_logout_label.config(text="")
+            self.after(1000, self.updateclock)
             
             
         
