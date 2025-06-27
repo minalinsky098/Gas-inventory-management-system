@@ -34,6 +34,22 @@ def setup_database():
     ''')
     
     cursor.execute('''
+        CREATE TABLE IF NOT EXISTS fuel_type (
+            fuel_type_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            fuel_name TEXT NOT NULL
+        )
+    ''')
+    
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS pump (
+            pump_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            fuel_type_id INTEGER NOT NULL,
+            pump_label TEXT NOT NULL,
+            FOREIGN KEY (fuel_type_id) REFERENCES fuel_type(fuel_type_id)
+        )
+    ''')
+    
+    cursor.execute('''
         CREATE TABLE IF NOT EXISTS transactions (
             transaction_id INTEGER PRIMARY KEY AUTOINCREMENT,
             shift_id INTEGER NOT NULL,
@@ -44,12 +60,33 @@ def setup_database():
         )
     ''')
     
-    # Check if the table is empty
+    # --- Pre-populate fuel_type table if empty ---
+    cursor.execute('SELECT COUNT(*) FROM fuel_type')
+    if cursor.fetchone()[0] == 0:
+        cursor.execute('INSERT INTO fuel_type (fuel_name) VALUES (?)', ('Diesel',))
+        diesel_id = cursor.lastrowid
+        cursor.execute('INSERT INTO fuel_type (fuel_name) VALUES (?)', ('Premium',))
+        premium_id = cursor.lastrowid
+        cursor.execute('INSERT INTO fuel_type (fuel_name) VALUES (?)', ('Unleaded',))
+        unleaded_id = cursor.lastrowid
+
+       
+        pumps = [
+            (diesel_id, 'Diesel 1'), 
+            (diesel_id, 'Diesel 2'), 
+            (premium_id, 'Premium 1'), 
+            (premium_id, 'Premium 2'), 
+            (premium_id, 'Premium 3'), 
+            (unleaded_id, 'Unleaded')
+        ]
+        cursor.executemany("INSERT INTO pump (fuel_type_id, pump_label) VALUES (?, ?)", pumps)
+    
+    #new admin setup
     cursor.execute('SELECT COUNT(*) FROM users')
     if cursor.fetchone()[0] == 0:
-        # Ask for a new admin password using a popup
+        
         root = tk.Tk()
-        root.withdraw()  # Hide the root window
+        root.withdraw()  
         new_admin_password = None
         while not new_admin_password:
             new_admin_password = simpledialog.askstring(
@@ -203,6 +240,7 @@ class HomePage(tk.Frame):
     def __init__(self, parent, controller, role, user_id):
         self.shift_icon = ImageTk.PhotoImage(Image.open("images/shift.png").resize((24, 24)))
         self.income_icon = ImageTk.PhotoImage(Image.open("images/income.png").resize((24, 24)))
+        self.price_icon = ImageTk.PhotoImage(Image.open("images/price.png").resize((24, 24)))
         self.delivery_icon = ImageTk.PhotoImage(Image.open("images/delivery.png").resize((24, 24)))
         self.inventory_icon = ImageTk.PhotoImage(Image.open("images/inventory.png").resize((24, 24)))
         self.transactions_icon = ImageTk.PhotoImage(Image.open("images/transaction.png").resize((24, 24)))
@@ -211,10 +249,11 @@ class HomePage(tk.Frame):
         self.buttons = [
             ("Start Shift", self.shift_icon, lambda: self.Onclick(1)),
             ("Income", self.income_icon, lambda: self.Onclick(2)),
-            ("Delivery", self.delivery_icon, lambda: self.Onclick(3)),
-            ("Inventory", self.inventory_icon, lambda: self.Onclick(4)),
-            ("Transactions", self.transactions_icon, lambda: self.Onclick(5)),
-            ("Logout", self.logout_icon, lambda: self.Onclick(6))
+            ("Price", self.price_icon, lambda: self.Onclick(3)),  # Assuming price is part of income
+            ("Delivery", self.delivery_icon, lambda: self.Onclick(4)),
+            ("Inventory", self.inventory_icon, lambda: self.Onclick(5)),
+            ("Transactions", self.transactions_icon, lambda: self.Onclick(6)),
+            ("Logout", self.logout_icon, lambda: self.Onclick(7))
         ]
         
         super().__init__(parent, bg='lightblue')
@@ -260,10 +299,10 @@ class HomePage(tk.Frame):
         nav_frame.grid(row=0, column=0, sticky='ew')
         for text, icon, cmd in self.buttons:
             if text == "Start Shift":
-                self.shift_button = tk.Button(nav_frame, text=text, image=icon, compound='left', command=cmd)
+                self.shift_button = tk.Button(nav_frame, text=text, image=icon, compound='left', relief= 'raised', bd = 4, command=cmd)
                 self.shift_button.pack(side='left', padx=5, pady=5)
             else:
-                tk.Button(nav_frame, text=text, image=icon, compound='left', command=cmd).pack(side='left', padx=5, pady=5)
+                tk.Button(nav_frame, text=text, image=icon, compound='left',  relief= 'raised', bd = 4, command=cmd).pack(side='left', padx=5, pady=5)
             
     def toggle_shift(self):
         timenow = datetime.datetime.now().strftime("%I:%M:%S:%p")
@@ -301,10 +340,10 @@ class HomePage(tk.Frame):
         nav_frame.grid(row=0, column=0, sticky='ew')
         for text, icon, cmd in self.buttons:
             if text == "Start Shift":
-                self.shift_button = tk.Button(nav_frame, text=text, image=icon, compound='left', command=cmd)
+                self.shift_button = tk.Button(nav_frame, text=text, image=icon, compound='left', relief= 'raised', bd = 4, command=cmd)
                 self.shift_button.pack(side='left', padx=5, pady=5)
             elif text == "Logout":
-                tk.Button(nav_frame, text=text, image=icon, compound='left', command=cmd).pack(side='left', padx=5, pady=5)
+                tk.Button(nav_frame, text=text, image=icon, compound='left', relief= 'raised', bd = 4, command=cmd).pack(side='left', padx=5, pady=5)
         
     def Onclick(self, number):
         def income_report(time_period):
@@ -321,12 +360,16 @@ class HomePage(tk.Frame):
                 menu.add_command(label="Yearly income", command=lambda: income_report("Yearly"))
                 menu.tk_popup(self.winfo_pointerx(), self.winfo_pointery())
             case 3: 
-                self.show_content(DeliveryPage) 
+                print("Price button clicked")
             case 4:
-                self.show_content(InventoryPage)
+                self.show_content(DeliveryPage) 
+                
             case 5:
-                self.show_content(TransactionsPage)
+                self.show_content(InventoryPage)
+                
             case 6:
+                self.show_content(TransactionsPage)
+            case 7:
                 if messagebox.askyesno("Logout", "Are you sure you want to logout?"):
                     self.controller.show_frame("LoginPage")  
                     
@@ -397,7 +440,7 @@ class DefaultPage(tk.Frame):
                     last_logout_time = str(row2[0])
                     last_logout_date = str(row2[1])
                     print("Error", e)
-        self.last_logout_label.config(text=f"Last Logout: {last_logout_date} at {last_logout_time}")
+        self.last_logout_label.config(text=f"Last Shift: {last_logout_date} at {last_logout_time}")
         conn.close()
         if self.userlogin:
             self.last_logout_label.config(text="")
