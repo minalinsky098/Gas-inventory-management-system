@@ -163,61 +163,166 @@ class ProjectFrame(tk.Tk):
 
 class LoginPage(tk.Frame):
     def __init__(self, parent, controller):
-        super().__init__(parent, bg='lightblue')
+        super().__init__(parent)
         self.controller = controller
-
-        # Configure grid
-        for r in range(7):
-            self.grid_rowconfigure(r, weight=1)
-            for c in range(3):
-                self.grid_columnconfigure(c, weight=1)
-
-        # grid layout for the frame
-        for r in range(7):  
-            for c in range(3):  
-                cell = tk.Frame(self, bg = 'lightblue',bd=1, relief="solid")
-                cell.grid(row=r, column=c, sticky="nsew")
-
-        # Title Label
-        titlelabel = tk.Label(self, text="(Gas station name) Inventory Management System", font=("Arial", 24), bg='blue')
-        titlelabel.grid(row=1, column=1, pady=(10, 5), sticky="")
-
-        # Picture logo
-        img = Image.open("images/loginpicture.png")
-        img = img.resize((200, 200)) 
-        logo = ImageTk.PhotoImage(img)
-        logolabel = tk.Label(self, image=logo, bg='lightblue')
-        logolabel.image = logo 
-        logolabel.grid(row=2, column=1, pady=(5, 10))
-
-        # Username
-        username_frame = tk.Frame(self, bg='lightblue')
-        username_label = tk.Label(username_frame, text="Username:", font=("Arial", 14), bg='lightblue')
-        username_label.pack(side="left", padx=(0, 10))
-        self.usernametextbox = tk.Entry(username_frame, width=30, font=("Arial", 14), bg='white')
-        self.usernametextbox.pack(side="left")
-        self.usernametextbox.focus_set() 
-        username_frame.grid(row=3, column=1, pady=5, sticky="")
-
-        # Password
-        password_frame = tk.Frame(self, bg='lightblue')
-        password_label = tk.Label(password_frame, text="Password:", font=("Arial", 14), bg='lightblue')
-        password_label.pack(side="left", padx=(0, 10))
-        self.passwordtextbox = tk.Entry(password_frame, show='*', width=30, font=("Arial", 14), bg='white')
-        self.passwordtextbox.pack(side="left")
-        password_frame.grid(row=4, column=1, pady=5, sticky="")
-
-        # Login button
-        loginbutton = tk.Button(self, text="Login", font=("Arial", 14), bg='green', fg='white', command=self.Onclick)
-        loginbutton.grid(row=5, column=1, pady=10)
-
-        # QOL Bindings
+        
+        # Modern color scheme
+        self.bg_color = '#2c3e50'  # Dark blue
+        self.primary_color = '#3498db'  # Bright blue
+        self.secondary_color = '#2980b9'  # Darker blue
+        self.accent_color = '#e74c3c'  # Red for errors
+        self.light_text = '#ecf0f1'  # Light gray
+        self.dark_text = '#2c3e50'   # Dark blue
+        self.entry_bg = '#ffffff'    # White
+        
+        # Configure the frame
+        self.configure(bg=self.bg_color)
+        
+        # Create a main container frame
+        container = tk.Frame(self, bg=self.bg_color)
+        container.pack(expand=True, fill='both', padx=20, pady=20)
+        
+        # Create a card-like frame for the login form
+        login_card = tk.Frame(container, bg=self.light_text, bd=0, 
+                             highlightbackground=self.primary_color, 
+                             highlightthickness=0, 
+                             relief='raised')
+        login_card.pack(expand=True, fill='both', padx=(0, 0), pady=(0, 0))
+        
+        # Configure grid for the card
+        login_card.grid_rowconfigure(0, weight=1)
+        login_card.grid_rowconfigure(1, weight=0)
+        login_card.grid_rowconfigure(2, weight=0)
+        login_card.grid_rowconfigure(3, weight=0)
+        login_card.grid_rowconfigure(4, weight=0)
+        login_card.grid_rowconfigure(5, weight=0)
+        login_card.grid_rowconfigure(6, weight=1)
+        login_card.grid_columnconfigure(0, weight=1)
+        login_card.grid_columnconfigure(1, weight=0)
+        login_card.grid_columnconfigure(2, weight=1)
+        
+        # Header section
+        header_frame = tk.Frame(login_card, bg=self.primary_color)
+        header_frame.grid(row=0, column=0, columnspan=3, sticky='nsew', padx=0, pady=0)
+        
+        # Title in header
+        title_label = tk.Label(
+            header_frame, 
+            text="Dwyane's Inventory System", 
+            font=("Segoe UI", 24, "bold"), 
+            bg=self.primary_color, 
+            fg=self.light_text,
+            pady=20
+        )
+        title_label.pack(fill='x', expand=True)
+        
+        # Logo (using placeholder text, but you can replace with an image)
+        logo_label = tk.Label(
+            login_card, 
+            text="📦", 
+            font=("Arial", 72), 
+            bg=self.light_text, 
+            fg=self.primary_color
+        )
+        logo_label.grid(row=1, column=1, pady=(30, 10))
+        
+        # Subtitle
+        subtitle = tk.Label(
+            login_card,
+            text="Secure Access to Your Inventory",
+            font=("Segoe UI", 12),
+            bg=self.light_text,
+            fg=self.dark_text
+        )
+        subtitle.grid(row=2, column=1, pady=(0, 30))
+        
+        # Username section
+        username_frame = tk.Frame(login_card, bg=self.light_text)
+        username_frame.grid(row=3, column=1, sticky='ew', pady=5)
+        
+        # Username label with icon
+        tk.Label(
+            username_frame, 
+            text="👤 Username", 
+            font=("Segoe UI", 11), 
+            bg=self.light_text, 
+            fg=self.dark_text,
+            anchor='w'
+        ).pack(fill='x', padx=5)
+        
+        # Modern entry field
+        self.usernametextbox = ttk.Entry(
+            username_frame, 
+            width=30, 
+            font=("Segoe UI", 12)
+        )
+        self.usernametextbox.pack(fill='x', pady=5, padx=5, ipady=8)
+        self.usernametextbox.focus_set()
+        
+        # Password section
+        password_frame = tk.Frame(login_card, bg=self.light_text)
+        password_frame.grid(row=4, column=1, sticky='ew', pady=5)
+        
+        tk.Label(
+            password_frame, 
+            text="🔒 Password", 
+            font=("Segoe UI", 11), 
+            bg=self.light_text, 
+            fg=self.dark_text,
+            anchor='w'
+        ).pack(fill='x', padx=5)
+        
+        self.passwordtextbox = ttk.Entry(
+            password_frame, 
+            show='*', 
+            width=30, 
+            font=("Segoe UI", 12)
+        )
+        self.passwordtextbox.pack(fill='x', pady=5, padx=5, ipady=8)
+        
+        # Login button with modern styling
+        login_btn = tk.Button(
+            login_card,
+            text="LOGIN",
+            font=("Segoe UI", 12, "bold"),
+            bg=self.primary_color,
+            fg=self.light_text,
+            bd=0,
+            padx=30,
+            pady=10,
+            cursor="hand2",
+            command=self.Onclick,
+            activebackground=self.secondary_color,
+            activeforeground=self.light_text
+        )
+        login_btn.grid(row=5, column=1, pady=(20, 10), sticky='ew')
+        
+        # Status message label (hidden by default)
+        self.status_label = tk.Label(
+            login_card,
+            text="",
+            font=("Segoe UI", 10),
+            bg=self.light_text,
+            fg=self.accent_color
+        )
+        self.status_label.grid(row=6, column=1, pady=(5, 20))
+        
+        # Footer
+        footer = tk.Label(
+            login_card,
+            text="© 2023 Dwyane's Inventory Management System",
+            font=("Segoe UI", 9),
+            bg=self.light_text,
+            fg='#7f8c8d'
+        )
+        footer.grid(row=7, column=1, pady=(10, 20))
+        
+        # QOL Bindings (preserved from original)
         self.usernametextbox.bind("<Return>", lambda e: self.passwordtextbox.focus_set())
         self.usernametextbox.bind("<Down>", lambda e: self.passwordtextbox.focus_set())
         self.passwordtextbox.bind("<Up>", lambda e: self.usernametextbox.focus_set())
         self.passwordtextbox.bind("<Return>", lambda e: self.Onclick())
-        loginbutton.bind("<Up>", lambda e: self.passwordtextbox.focus_set())
-        self.controller = controller
+        login_btn.bind("<Up>", lambda e: self.passwordtextbox.focus_set())
 
     def Onclick(self):
         username = self.usernametextbox.get()
@@ -238,6 +343,7 @@ class LoginPage(tk.Frame):
 
 class HomePage(tk.Frame):
     def __init__(self, parent, controller, role, user_id):
+        
         self.shift_icon = ImageTk.PhotoImage(Image.open("images/shift.png").resize((24, 24)))
         self.income_icon = ImageTk.PhotoImage(Image.open("images/income.png").resize((24, 24)))
         self.price_icon = ImageTk.PhotoImage(Image.open("images/price.png").resize((24, 24)))
@@ -245,65 +351,111 @@ class HomePage(tk.Frame):
         self.inventory_icon = ImageTk.PhotoImage(Image.open("images/inventory.png").resize((24, 24)))
         self.transactions_icon = ImageTk.PhotoImage(Image.open("images/transaction.png").resize((24, 24)))
         self.logout_icon = ImageTk.PhotoImage(Image.open("images/logout.png").resize((24, 24)))
-        #buttons setup
+        
+        
         self.buttons = [
             ("Start Shift", self.shift_icon, lambda: self.Onclick(1)),
             ("Income", self.income_icon, lambda: self.Onclick(2)),
-            ("Price", self.price_icon, lambda: self.Onclick(3)),  # Assuming price is part of income
+            ("Price", self.price_icon, lambda: self.Onclick(3)),
             ("Delivery", self.delivery_icon, lambda: self.Onclick(4)),
             ("Inventory", self.inventory_icon, lambda: self.Onclick(5)),
             ("Transactions", self.transactions_icon, lambda: self.Onclick(6)),
             ("Logout", self.logout_icon, lambda: self.Onclick(7))
         ]
-        
-        super().__init__(parent, bg='lightblue')
+
+        super().__init__(parent, bg='#f5f7fa')  # Match login background
         self.role = role
         self.user_id = user_id
         self.controller = controller
         self.shift_started = False
         self.shift_button = None
 
-        # grid layout for the frame
-        for r in range(2):
-            for c in range(1):
-                cell = tk.Frame(self, bg='lightblue', bd=1, relief="solid")
-                cell.grid(row=r, column=c, sticky="nsew")
-
         # Configure grid
-        for r in range(2):
-            self.grid_rowconfigure(r, weight=0)
-            w = 0
-            for c in range(1):
-                self.grid_columnconfigure(c, weight=w)
-                w += 1
+        self.grid_rowconfigure(0, weight=0) 
+        self.grid_rowconfigure(1, weight=1)   
+        self.grid_columnconfigure(0, weight=1)
 
-        # Navigation bar
+        # Create navigation bar - modern dark blue
+        nav_frame = tk.Frame(self, bg='#2c3e50', height=70) 
+        nav_frame.grid(row=0, column=0, sticky='ew')
+        nav_frame.grid_propagate(False)  
         
+        # Add logo/name to navbar
+        logo_frame = tk.Frame(nav_frame, bg='#2c3e50')
+        logo_frame.pack(side='left', padx=20)
+        
+        logo_label = tk.Label(
+            logo_frame, 
+            text="📦", 
+            font=("Arial", 24), 
+            bg='#2c3e50', 
+            fg='#ecf0f1'
+        )
+        logo_label.pack(side='left', padx=(0, 10))
+        
+        title_label = tk.Label(
+            logo_frame, 
+            text="Dwyane's Inventory", 
+            font=("Segoe UI", 16, "bold"), 
+            bg='#2c3e50', 
+            fg='#ecf0f1'
+        )
+        title_label.pack(side='left')
+
+        # Create container for nav buttons
+        button_frame = tk.Frame(nav_frame, bg='#2c3e50')
+        button_frame.pack(side='right', padx=20)
+        
+        # Create buttons based on role
         if self.role == "admin":
-            self.admin_navbar()
+            self.admin_navbar(button_frame)
         else:
-            self.user_navbar()
+            self.user_navbar(button_frame)
             self.user_id = 2
 
-        # Main content area (container)
-        self.main_content = tk.Frame(self, bg='white')
-        self.main_content.grid(row=1, column=0, sticky='nsew')
-        self.grid_rowconfigure(1, weight=1)
-        self.grid_columnconfigure(0, weight=1)
+        # Main content area - modern card design
+        self.main_content = tk.Frame(self, bg='#ffffff', bd=0, highlightthickness=0)
+        self.main_content.grid(row=1, column=0, sticky='nsew', padx=20, pady=20)
+        self.main_content.grid_rowconfigure(0, weight=1)
+        self.main_content.grid_columnconfigure(0, weight=1)
         self.current_page = None
 
-        self.show_content(DefaultPage, userlogin = False)  
+        # Add subtle shadow effect
+        shadow = tk.Frame(self, bg='#e0e5ec', bd=0)
+        shadow.place(in_=self.main_content, relx=0, rely=0, x=-4, y=-4, relwidth=1, relheight=1, width=8, height=8)
+        self.main_content.lift()  # Bring above shadow
 
-    def admin_navbar(self):
-        nav_frame = tk.Frame(self, bg='gray')
-        nav_frame.grid(row=0, column=0, sticky='ew')
+        self.show_content(DefaultPage, userlogin=False)  
+
+    def admin_navbar(self, parent_frame):
+        # Create modern styled buttons without changing names
         for text, icon, cmd in self.buttons:
-            if text == "Start Shift":
-                self.shift_button = tk.Button(nav_frame, text=text, image=icon, compound='left', relief= 'raised', bd = 4, command=cmd)
-                self.shift_button.pack(side='left', padx=5, pady=5)
-            else:
-                tk.Button(nav_frame, text=text, image=icon, compound='left',  relief= 'raised', bd = 4, command=cmd).pack(side='left', padx=5, pady=5)
+            # Create a button frame for styling
+            btn_frame = tk.Frame(parent_frame, bg='#2c3e50', padx=5)
+            btn_frame.pack(side='left', padx=5)
             
+            btn = tk.Button(
+                btn_frame,
+                text=text,
+                image=icon,
+                compound='left',
+                bg='#3498db' if text != "Logout" else '#e74c3c',  # Blue for most, red for logout
+                fg='white',
+                font=("Segoe UI", 10, "bold"),
+                bd=0,
+                padx=10,
+                pady=6,
+                relief='flat',
+                command=cmd,
+                cursor="hand2",
+                activebackground='#2980b9' if text != "Logout" else '#c0392b'
+            )
+            btn.pack(side='left', padx=5, pady=15)  # Added vertical padding here
+            
+            # Store reference to shift button
+            if text == "Start Shift":
+                self.shift_button = btn
+                
     def toggle_shift(self):
         timenow = datetime.datetime.now().strftime("%I:%M:%S:%p")
         shift_date = datetime.datetime.now().strftime("%Y-%m-%d")
@@ -320,7 +472,6 @@ class HomePage(tk.Frame):
             self.shift_button.config(text="End Shift")
             self.shift_started = True  
             self.show_content(DefaultPage, userlogin = True)
-            
         else:
             cursor.execute('SELECT shift_id FROM shift WHERE user_id = ? AND shift_end_time IS NULL ORDER BY shift_id DESC LIMIT 1', (user_id,))
             row = cursor.fetchone()
@@ -334,16 +485,36 @@ class HomePage(tk.Frame):
             self.show_content(DefaultPage, userlogin = False)
             
         conn.close()
-
-    def user_navbar(self):
-        nav_frame = tk.Frame(self, bg='gray')
-        nav_frame.grid(row=0, column=0, sticky='ew')
+        
+    def user_navbar(self, parent_frame):
+        # Create modern styled buttons for user role without changing names
         for text, icon, cmd in self.buttons:
-            if text == "Start Shift":
-                self.shift_button = tk.Button(nav_frame, text=text, image=icon, compound='left', relief= 'raised', bd = 4, command=cmd)
-                self.shift_button.pack(side='left', padx=5, pady=5)
-            elif text == "Logout":
-                tk.Button(nav_frame, text=text, image=icon, compound='left', relief= 'raised', bd = 4, command=cmd).pack(side='left', padx=5, pady=5)
+            if text in ["Start Shift", "Logout"]:
+                # Create a button frame for styling
+                btn_frame = tk.Frame(parent_frame, bg='#2c3e50', padx=5)
+                btn_frame.pack(side='left', padx=5)
+                
+                btn = tk.Button(
+                    btn_frame,
+                    text=text,
+                    image=icon,
+                    compound='left',
+                    bg='#3498db' if text != "Logout" else '#e74c3c',
+                    fg='white',
+                    font=("Segoe UI", 10, "bold"),
+                    bd=2,
+                    padx=10,
+                    pady=8,
+                    relief='raised',
+                    command=cmd,
+                    cursor="hand2",
+                    activebackground='#2980b9' if text != "Logout" else '#c0392b'
+                )
+                btn.pack()
+                
+                # Store reference to shift button
+                if text == "Start Shift":
+                    self.shift_button = btn
         
     def Onclick(self, number):
         def income_report(time_period):
@@ -363,10 +534,8 @@ class HomePage(tk.Frame):
                 print("Price button clicked")
             case 4:
                 self.show_content(DeliveryPage) 
-                
             case 5:
                 self.show_content(InventoryPage)
-                
             case 6:
                 self.show_content(TransactionsPage)
             case 7:
@@ -391,20 +560,20 @@ class DefaultPage(tk.Frame):
             self.grid_rowconfigure(r, weight=1, minsize=100)
             for c in range(3):
                 self.grid_columnconfigure(c, weight=1, minsize=100)
-                cell = tk.Frame(self, bg="#91C4EE", bd=1, relief="solid")
+                cell = tk.Frame(self, bg="#91C4EE", bd=1 , relief="solid")
                 cell.grid(row=r, column=c, sticky="nsew")
 
         # Container frame on lower right corner
-        bottom_right = tk.Frame(self, bg='white', width=50)
+        bottom_right = tk.Frame(self, bg="#91C4EE" , bd = 2 , relief="solid",  width=50)
         bottom_right.grid(row=2, column=2, sticky="se", padx=10, pady=10)
         bottom_right.grid_propagate(False)  
 
         # Stack the labels inside the container frame
-        self.last_logout_label = tk.Label(bottom_right, font=("Comic Sans MS", 16), bg='white')
+        self.last_logout_label = tk.Label(bottom_right, font=("Comic Sans MS", 14), bg="#91C4EE")
         self.last_logout_label.pack(anchor="e")
-        self.date_label = tk.Label(bottom_right, font=("Comic Sans MS", 16), bg='white')
+        self.date_label = tk.Label(bottom_right, font=("Comic Sans MS", 14), bg="#91C4EE")
         self.date_label.pack(anchor="e")
-        self.clock_label = tk.Label(bottom_right, font=("Comic Sans MS", 16), bg='white')
+        self.clock_label = tk.Label(bottom_right, font=("Comic Sans MS", 14), bg="#91C4EE")
         self.clock_label.pack(anchor="e")
         self.updateclock()
         
