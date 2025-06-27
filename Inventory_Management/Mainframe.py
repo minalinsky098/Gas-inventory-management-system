@@ -240,7 +240,7 @@ class HomePage(tk.Frame):
         self.grid_columnconfigure(0, weight=1)
         self.current_page = None
 
-        self.show_content(DefaultPage)  
+        self.show_content(DefaultPage, userlogin = False)  
 
     def admin_navbar(self):
         nav_frame = tk.Frame(self, bg='gray')
@@ -261,10 +261,12 @@ class HomePage(tk.Frame):
             messagebox.showinfo("Start Shift", f"{shift_type} Shift started successfully at {now}")
             self.shift_button.config(text="End Shift")
             self.shift_started = True
+            self.show_content(DefaultPage, userlogin = True)
         else:
             messagebox.showinfo("End shift",f"{shift_type} Shift ended at {now}")
             self.shift_button.config(text="Start Shift")
             self.shift_started = False
+            self.show_content(DefaultPage, userlogin = False)
 
     def user_navbar(self):
         nav_frame = tk.Frame(self, bg='gray')
@@ -300,21 +302,50 @@ class HomePage(tk.Frame):
                 if messagebox.askyesno("Logout", "Are you sure you want to logout?"):
                     self.controller.show_frame("LoginPage")  
                     
-    def show_content(self, PageClass):
+    def show_content(self, PageClass, *args, **kwargs):
         if self.current_page:
             self.current_page.destroy()
-        self.current_page = PageClass(self.main_content)
+        self.current_page = PageClass(self.main_content, *args, **kwargs)
         self.current_page.pack(fill='both', expand=True)
         
 class DefaultPage(tk.Frame):
-    def __init__(self, parent):
+    def __init__(self, parent, userlogin = False):
         super().__init__(parent, bg='white')
+
+        self.userlogin = userlogin
         for r in range(3):
-            self.grid_rowconfigure(r, weight=1)
+            self.grid_rowconfigure(r, weight=1, minsize=100)
             for c in range(3):
-                self.grid_columnconfigure(c, weight=1)
-                cell = tk.Frame(self, bg = "#91C4EE", bd=1, relief="solid")
+                self.grid_columnconfigure(c, weight=1, minsize=100)
+                cell = tk.Frame(self, bg="#91C4EE", bd=1, relief="solid")
                 cell.grid(row=r, column=c, sticky="nsew")
+
+        # Create a container frame at the bottom right cell
+        bottom_right = tk.Frame(self, bg='white', width=50)
+        bottom_right.grid(row=2, column=2, sticky="se", padx=10, pady=10)
+        bottom_right.grid_propagate(False)  # Prevent resizing to fit contents
+
+        # Stack the labels inside the container frame
+        self.date_label = tk.Label(bottom_right, font=("Comic Sans MS", 16), bg='white')
+        self.date_label.pack(anchor="e")
+        self.clock_label = tk.Label(bottom_right, font=("Comic Sans MS", 16), bg='white')
+        self.clock_label.pack(anchor="e")
+        self.updateclock()
+        
+    def updateclock(self):
+        monthnow = datetime.datetime.now().strftime("%B")
+        weeknow = datetime.datetime.now().strftime("%A")
+        daynow = datetime.datetime.now().strftime("%d")
+        yearnow = datetime.datetime.now().strftime("%Y")
+        timenow = datetime.datetime.now().strftime("%I:%M:%S %p")
+        self.date_label.config(text=f"{weeknow}, {monthnow} {daynow}, {yearnow}")  
+        self.clock_label.config(text = timenow) 
+        if(self.userlogin):
+            self.date_label.after(1000, self.updateclock)
+            self.clock_label.after(1000, self.updateclock)
+            
+            
+        
                 
 class DeliveryPage(tk.Frame):
     def __init__(self, parent):
