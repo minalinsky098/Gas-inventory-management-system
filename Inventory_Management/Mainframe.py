@@ -145,7 +145,7 @@ class ProjectFrame(tk.Tk):
         self.state('zoomed')  # Start maximized
         self.frames = {}
         self.setup_frames()
-        self.show_frame("HomePage")
+        self.show_frame("LoginPage")
 
     # Placing Pages(Loginpage, Homepage)
     def setup_frames(self):
@@ -437,11 +437,12 @@ class HomePage(tk.Frame):
     def navbar(self, parent_frame):
         # Create modern styled buttons for user role without changing names
         for text, icon, cmd in self.buttons:
+            if self.role == "user" and text not in ["Start Shift", "Logout"]:
+                continue
             button_frame = tk.Frame(parent_frame, bg='#2c3e50', padx=5)
             button_frame.pack(side='left', padx=5)
-            if self.role == "user" and text not in ["Start Shift", "Logout"]:
-                # Button design
-                button = tk.Button(
+            # Button design
+            button = tk.Button(
                     button_frame,
                     text=text,
                     image=icon,
@@ -456,31 +457,12 @@ class HomePage(tk.Frame):
                     command=cmd,
                     cursor="hand2",
                     activebackground='#2980b9' if text != "Logout" else '#c0392b',
-                    height = 6  # Set fixed height in text lines
+                    height = 6,  # Set fixed height in text lines
                 )
-                state = tk.DISABLED
-            else:
-                button = tk.Button(
-                    button_frame,
-                    text=text,
-                    image=icon,
-                    compound='left',
-                    bg='#3498db' if text != "Logout" else '#e74c3c',
-                    fg='white',
-                    font=("Segoe UI", 10, "bold"),
-                    bd=4,
-                    padx=10,
-                    pady=8,
-                    relief='raised',
-                    command=cmd,
-                    cursor="hand2",
-                    activebackground='#2980b9' if text != "Logout" else '#c0392b',
-                    height = 6  # Set fixed height in text lines
-                )
-                button.pack()
-                
-                # Store reference to shift button
-                if text == "Start Shift":
+            button.pack() 
+               
+            # Store reference to shift button
+            if text == "Start Shift":
                     self.shift_button = button            
                 
     # When Start Shift button is clicked, it will toggle the shift status            
@@ -567,6 +549,8 @@ class DefaultPage(tk.Frame):
                 self.grid_columnconfigure(c, weight=1, minsize=100)
                 cell = tk.Frame(self, bg="#91C4EE", bd=1 , relief="solid")
                 cell.grid(row=r, column=c, sticky="nsew")
+        if not self.userlogin:
+            self.disable_all_widgets()
 
         # Container frame on lower right corner
         bottom_right = tk.Frame(self, bg="#91C4EE" , bd = 2 , relief="solid",  width=50)
@@ -581,7 +565,6 @@ class DefaultPage(tk.Frame):
         self.clock_label = tk.Label(bottom_right, font=("Comic Sans MS", 14), bg="#91C4EE")
         self.clock_label.pack(anchor="e")
         self.updateclock()
-        
         
     def updateclock(self):
         conn = sqlite3.connect('Databases/inventory_db.db')
@@ -618,7 +601,17 @@ class DefaultPage(tk.Frame):
         conn.close()
         if self.userlogin:
             self.last_logout_label.config(text="")
-            self.after(1000, self.updateclock)   
+            self.after(1000, self.updateclock)  
+    def disable_all_widgets(self):
+        # Recursively disable all child widgets
+        def disable_recursive(widget):
+            for child in widget.winfo_children():
+                try:
+                    child.configure(state='disabled')
+                except Exception:
+                    pass
+                disable_recursive(child)
+        disable_recursive(self) 
                 
 class DeliveryPage(tk.Frame):
     def __init__(self, parent):
