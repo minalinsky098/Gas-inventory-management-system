@@ -539,33 +539,268 @@ class HomePage(tk.Frame):
         
 class DefaultPage(tk.Frame):
     def __init__(self, parent, userlogin = False, user_id = None):
-        super().__init__(parent, bg='white')
-
+        super().__init__(parent, bg='#91C4EE')
+        
+        diesel1_icon = ImageTk.PhotoImage(Image.open("images/diesel_1.png").resize((24, 24)))
+        diesel2_icon = ImageTk.PhotoImage(Image.open("images/diesel_2.png").resize((24, 24)))
+        premium1_icon = ImageTk.PhotoImage(Image.open("images/premium_1.png").resize((24,24)))
+        
         self.userlogin = userlogin
         self.user_id = user_id
         for r in range(3):
             self.grid_rowconfigure(r, weight=1, minsize=100)
             for c in range(3):
                 self.grid_columnconfigure(c, weight=1, minsize=100)
-                cell = tk.Frame(self, bg="#91C4EE", bd=1 , relief="solid")
-                cell.grid(row=r, column=c, sticky="nsew")
-        if not self.userlogin:
-            self.disable_all_widgets()
+                    
+        # Container frame on top left square
+        top_left = tk.Frame(self, bg="#91C4EE", bd = 2, relief= "solid",  width=50)
+        top_left.grid(row = 0, column = 0, sticky="nsew", padx=10, pady=10)
+        top_left.grid_propagate(False)
+        
+        self.diesel1_button = tk.Button(
+                    top_left,
+                    text="Diesel 1",
+                    image= diesel1_icon,
+                    compound='left',
+                    bg="#70818c", 
+                    fg='white',
+                    font=("Segoe UI", 10, "bold"),
+                    bd=4,
+                    padx=10,
+                    pady=5,
+                    relief='raised',
+                    command=lambda: self.Onclick(1),
+                    cursor="hand2",
+                    activebackground="#4f5a62",
+                    state = "disabled",
+                    width = 150,
+                    height = 30 
+        )
+        self.diesel1_button.pack(anchor='center', padx=10, pady=5)
+        self.diesel1_volume_label = tk.Label(top_left, text= "Diesel 1 Volume:",font=("Comic Sans MS", 14), bg = "#91C4EE")
+        self.diesel1_volume_label.pack(anchor = 'center', padx = 10, pady = 5)
+        self.diesel1_volume_textbox = ttk.Entry(
+            top_left, 
+            width=20, 
+            font=("Comic Sans MS", 12)
+        )
+        self.diesel1_volume_textbox.pack(anchor='center', padx= 10, pady= 5)
+        self.diesel1_volume_textbox.bind('<KeyRelease>', lambda e: self.update_price(1))
+        self.diesel1_price_label = tk.Label(top_left, text= "Price:",font=("Comic Sans MS", 14), bg = "#91C4EE")
+        self.diesel1_price_label.pack(anchor = 'center', padx = 10, pady = 5)
+        self.diesel1_price_textbox = ttk.Entry(
+            top_left, 
+            width=20, 
+            font=("Comic Sans MS", 12),
+            state= "disabled"
+        )
+        self.diesel1_price_textbox.pack(anchor='center', padx= 10, pady= 5)
 
-        # Container frame on lower right corner
+        # Container frame on top middle square
+        top_middle = tk.Frame(self, bg="#91C4EE", bd = 2, relief = "solid", width=50)
+        top_middle.grid(row = 0, column = 1, sticky="nsew", padx=10, pady=10)
+        top_middle.grid_propagate(False)
+        self.diesel2_button = tk.Button(
+                    top_middle,
+                    text="Diesel 2",
+                    image= diesel2_icon,
+                    compound='left',
+                    bg="#70818c", 
+                    fg='white',
+                    font=("Segoe UI", 10, "bold"),
+                    bd=4,
+                    padx=10,
+                    pady=5,
+                    relief='raised',
+                    command=lambda: self.Onclick(2),
+                    cursor="hand2",
+                    activebackground="#4f5a62",
+                    state = "disabled",
+                    width = 150,
+                    height = 30 
+        )
+        self.diesel2_button.pack(anchor='center', padx=10, pady=5)
+        self.diesel2_volume_label = tk.Label(top_middle, text= "Diesel 2 Volume:",font=("Comic Sans MS", 14), bg = "#91C4EE")
+        self.diesel2_volume_label.pack(anchor='center', padx= 10, pady= 5)
+        self.diesel2_volume_textbox = ttk.Entry(
+            top_middle, 
+            width=20, 
+            font=("Comic Sans MS", 12)
+        )
+        self.diesel2_volume_textbox.pack(anchor='center', padx= 10, pady= 5)
+        self.diesel2_volume_textbox.bind('<KeyRelease>', lambda e: self.update_price(2))
+        self.diesel2_price_label = tk.Label(top_middle, text= "Price:",font=("Comic Sans MS", 14), bg = "#91C4EE")
+        self.diesel2_price_label.pack(anchor = 'center', padx = 10, pady = 5)
+        self.diesel2_price_textbox = ttk.Entry(
+            top_middle, 
+            width=20, 
+            font=("Comic Sans MS", 12),
+            state= "disabled"
+        )
+        self.diesel2_price_textbox.pack(anchor='center', padx= 10, pady= 5)
+
+        # Container frame on top right square
+        top_right = tk.Frame(self, bg="#91C4EE",  bd = 2, relief = "solid",width=50)
+        top_right.grid(row = 0, column = 2, sticky="nsew", padx=10, pady=10)
+        top_right.grid_propagate(False)
+        self.premium1_button = tk.Button(
+                    top_right,
+                    text="Premium 1",
+                    image= premium1_icon,
+                    compound='left',
+                    bg="#70818c", 
+                    fg='white',
+                    font=("Segoe UI", 10, "bold"),
+                    bd=4,
+                    padx=10,
+                    pady=5,
+                    relief='raised',
+                    command=lambda: self.Onclick(3),
+                    cursor="hand2",
+                    activebackground="#4f5a62",
+                    state = "disabled",
+                    width = 150,
+                    height = 30 
+        )
+        self.premium1_button.pack(anchor='center', padx=10, pady=5)
+        self.premium1_volume_label = tk.Label(top_right, text= "Premium 1 Volume:",font=("Comic Sans MS", 14), bg = "#91C4EE")
+        self.premium1_volume_label.pack(anchor='center', padx= 10, pady= 5)
+        self.premium1_volume_textbox = ttk.Entry(
+            top_right, 
+            width=20, 
+            font=("Comic Sans MS", 12)
+        )
+        self.premium1_volume_textbox.pack(anchor='center', padx= 10, pady= 5)
+        self.premium1_volume_textbox.bind('<KeyRelease>', lambda e: self.update_price(3))
+        self.premium1_price_label = tk.Label(top_right, text= "Price:",font=("Comic Sans MS", 14), bg = "#91C4EE")
+        self.premium1_price_label.pack(anchor = 'center', padx = 10, pady = 5)
+        self.premium1_price_textbox = ttk.Entry(
+            top_right, 
+            width=20, 
+            font=("Comic Sans MS", 12),
+            state= "disabled"
+        )
+        self.premium1_price_textbox.pack(anchor='center', padx= 10, pady= 5)
+        
+        # Container frame on middle left square
+        middle_left = tk.Frame(self, bg="#91EE91" , bd = 2 , relief="solid",  width=50)
+        middle_left.grid(row = 1, column = 0, sticky="nsew", padx=10, pady=10)
+        middle_left.grid_propagate(False)
+
+        # Container frame on middle middle square
+        middle_middle = tk.Frame(self, bg="#91EE91" , bd = 2 , relief="solid",  width=50)
+        middle_middle.grid(row = 1, column = 1, sticky="nsew", padx=10, pady=10)
+        middle_middle.grid_propagate(False)
+
+        # Container frame on middle right square
+        middle_right = tk.Frame(self, bg="#91EE91" , bd = 2 , relief="solid",  width=50)
+        middle_right.grid(row = 1, column = 2, sticky="nsew", padx=10, pady=10)
+        middle_right.grid_propagate(False)
+        
+        # Container frame on bottom left square
+        bottom_left = tk.Frame(self, bg="#91EE91" , bd = 2 , relief="solid",  width=50)
+        bottom_left.grid(row = 2, column = 0, sticky="nsew", padx=10, pady=10)
+        bottom_left.grid_propagate(False)
+
+        # Container frame on bottom middle square
+        bottom_middle = tk.Frame(self, bg="#91EE91" , bd = 2 , relief="solid",  width=50)
+        bottom_middle.grid(row = 2, column = 1, sticky="nsew", padx=10, pady=10)
+        bottom_middle.grid_propagate(False)
+
+        # Container frame on lower right square
         bottom_right = tk.Frame(self, bg="#91C4EE" , bd = 2 , relief="solid",  width=50)
-        bottom_right.grid(row=2, column=2, sticky="se", padx=10, pady=10)
+        bottom_right.grid(row=2, column=2, sticky="nsew", padx=10, pady=10)
         bottom_right.grid_propagate(False)  
 
         # Stack the labels inside the container frame
-        self.last_logout_label = tk.Label(bottom_right, font=("Comic Sans MS", 14), bg="#91C4EE")
-        self.last_logout_label.pack(anchor="e")
-        self.date_label = tk.Label(bottom_right, font=("Comic Sans MS", 14), bg="#91C4EE")
-        self.date_label.pack(anchor="e")
-        self.clock_label = tk.Label(bottom_right, font=("Comic Sans MS", 14), bg="#91C4EE")
-        self.clock_label.pack(anchor="e")
-        self.updateclock()
+        self.clock_label = tk.Label(bottom_right, font=("Comic Sans MS", 14), bg="#91C4EE", anchor='e', justify='right')
+        self.clock_label.pack(side='bottom', anchor='e', padx=10, pady=(0,2), fill='x')        
+        self.date_label = tk.Label(bottom_right, font=("Comic Sans MS", 14), bg="#91C4EE", anchor='e', justify='right')
+        self.date_label.pack(side='bottom', anchor='e', padx=10, pady=(0,2), fill='x')
+        self.last_logout_label = tk.Label(bottom_right, font=("Comic Sans MS", 14), bg="#91C4EE", anchor='e', justify='right')
+        self.last_logout_label.pack(side='bottom', anchor='e', padx=10, pady=(0,2), fill='x')
+        self.updateclock()  
         
+        if self.userlogin:  
+            self.diesel1_button.config(state = "normal")
+            self.diesel2_button.config(state = "normal")
+            self.premium1_button.config(state = "normal")
+            self.diesel1_volume_textbox.config(state = "normal")
+            self.diesel2_volume_textbox.config(state = "normal")
+            self.premium1_volume_textbox.config(state = "normal")
+            self.diesel1_volume_textbox.delete(0, tk.END)
+            self.diesel2_volume_textbox.delete(0, tk.END)
+            self.premium1_volume_textbox.delete(0, tk.END)
+            self.diesel1_price_textbox.delete(0, tk.END)
+            self.diesel2_price_textbox.delete(0, tk.END)
+            self.premium1_price_textbox.delete(0, tk.END)    
+        else:
+            self.diesel1_button.config(state = "disabled")
+            self.diesel2_button.config(state = "disabled")
+            self.premium1_button.config(state = "disabled")
+            self.diesel1_volume_textbox.config(state = "disabled")
+            self.diesel2_volume_textbox.config(state = "disabled")
+            self.premium1_volume_textbox.config(state = "disabled")
+            self.diesel1_volume_textbox.delete(0, tk.END)
+            self.diesel2_volume_textbox.delete(0, tk.END)
+            self.premium1_volume_textbox.delete(0, tk.END)
+            self.diesel1_price_textbox.delete(0, tk.END)
+            self.diesel2_price_textbox.delete(0, tk.END)
+            self.premium1_price_textbox.delete(0, tk.END)      
+    def update_price(self, number):
+        match number:
+            case 1:
+                try:
+                    volume = float(self.diesel1_volume_textbox.get())
+                    price = volume *50
+                    price_str = f"{price:.2f}"
+                except ValueError:
+                    price_str = ""
+                self.diesel1_price_textbox.config(state="normal")
+                self.diesel1_price_textbox.delete(0, tk.END)
+                self.diesel1_price_textbox.insert(0, price_str)
+                self.diesel1_price_textbox.config(state="disabled")
+            case 2:
+                try:
+                    volume = float(self.diesel2_volume_textbox.get())
+                    price = volume *50
+                    price_str = f"{price:.2f}"
+                except ValueError:
+                    price_str = ""
+                self.diesel2_price_textbox.config(state="normal")
+                self.diesel2_price_textbox.delete(0, tk.END)
+                self.diesel2_price_textbox.insert(0, price_str)
+                self.diesel2_price_textbox.config(state="disabled") 
+            case 3:
+                try:
+                    volume = float(self.premium1_volume_textbox.get())
+                    price = volume *50
+                    price_str = f"{price:.2f}"
+                except ValueError:
+                    price_str = ""
+                self.premium1_volume_textbox.config(state="normal")
+                self.premium1_volume_textbox.delete(0, tk.END)
+                self.premium1_volume_textbox.insert(0, price_str)
+                self.premium1_volume_textbox.config(state="disabled")      
+            
+    def Onclick(self, button_number):
+        match button_number:
+            case 1:
+                print("Diesel 1 clicked")
+                self.diesel1_volume_textbox.focus_set()
+            case 2:
+                print("Diesel 2 clicked")
+                self.diesel2_volume_textbox.focus_set()
+            case 3:
+                print("Premium 1 clicked")
+                self.premium1_volume_textbox.focus_set()
+            case 4:
+                print("Premium 2 clicked")
+            case 5:
+                print("Premium 3 clicked")
+            case 6:
+                print("Unleaded clicked")  
+       
     def updateclock(self):
         conn = sqlite3.connect('Databases/inventory_db.db')
         cursor = conn.cursor()
@@ -602,16 +837,6 @@ class DefaultPage(tk.Frame):
         if self.userlogin:
             self.last_logout_label.config(text="")
             self.after(1000, self.updateclock)  
-    def disable_all_widgets(self):
-        # Recursively disable all child widgets
-        def disable_recursive(widget):
-            for child in widget.winfo_children():
-                try:
-                    child.configure(state='disabled')
-                except Exception:
-                    pass
-                disable_recursive(child)
-        disable_recursive(self) 
                 
 class DeliveryPage(tk.Frame):
     def __init__(self, parent):
