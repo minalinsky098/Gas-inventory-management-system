@@ -139,15 +139,17 @@ class ProjectFrame(tk.Tk):
         self.geometry(f"{window_width}x{window_height}+{x}+{y}")
 
         # Set minimum size so it doesn't get too small
+        self.shift_started = False
+        self.protocol("WM_DELETE_WINDOW", self.on_closing)  # Handle close event
         self.minsize(1200, 600)
         self.state('zoomed')  # Start maximized
         self.frames = {}
         self.setup_frames()
         self.show_frame("HomePage")
 
+    # Placing Pages(Loginpage, Homepage)
     def setup_frames(self):
         self.frames["LoginPage"] = LoginPage(self, self)
-        # Add more frames here as needed, e.g.:
         for frame in self.frames.values():
             frame.place(relwidth=1, relheight=1)
  
@@ -155,11 +157,17 @@ class ProjectFrame(tk.Tk):
         for frame in self.frames.values():
             frame.place_forget()
         if name == "HomePage":
-            # Recreate HomePage with the correct role
             if "HomePage" in self.frames:
                 self.frames["HomePage"].destroy()
             self.frames["HomePage"] = HomePage(self, self, role, user_id)
         self.frames[name].place(relwidth=1, relheight=1)
+    
+    # Error message when shift is active
+    def on_closing(self):
+        if self.shift_started:
+            messagebox.showwarning("Action Blocked", "You cannot exit the program while logged in. Please logout first.")
+        else:
+            self.destroy()
 
 class LoginPage(tk.Frame):
     def __init__(self, parent, controller):
@@ -167,6 +175,7 @@ class LoginPage(tk.Frame):
         self.controller = controller
         
         # Modern color scheme
+        self.login_icon = ImageTk.PhotoImage(Image.open("images/login.png").resize((108, 108)))
         self.bg_color = '#2c3e50'  # Dark blue
         self.primary_color = '#3498db'  # Bright blue
         self.secondary_color = '#2980b9'  # Darker blue
@@ -216,10 +225,10 @@ class LoginPage(tk.Frame):
         )
         title_label.pack(fill='x', expand=True)
         
-        # Logo (using placeholder text, but you can replace with an image)
+        # Logo 
         logo_label = tk.Label(
             login_card, 
-            text="📦", 
+            image= self.login_icon, 
             font=("Arial", 72), 
             bg=self.light_text, 
             fg=self.primary_color
@@ -351,7 +360,7 @@ class HomePage(tk.Frame):
         self.inventory_icon = ImageTk.PhotoImage(Image.open("images/inventory.png").resize((24, 24)))
         self.transactions_icon = ImageTk.PhotoImage(Image.open("images/transaction.png").resize((24, 24)))
         self.logout_icon = ImageTk.PhotoImage(Image.open("images/logout.png").resize((24, 24)))
-        
+        self.login_icon = ImageTk.PhotoImage(Image.open("images/login.png").resize((36, 36)))
         
         self.buttons = [
             ("Start Shift", self.shift_icon, lambda: self.Onclick(1)),
@@ -367,26 +376,27 @@ class HomePage(tk.Frame):
         self.role = role
         self.user_id = user_id
         self.controller = controller
-        self.shift_started = False
         self.shift_button = None
+        self.shift_started = self.controller.shift_started
 
         # Configure grid
         self.grid_rowconfigure(0, weight=0) 
         self.grid_rowconfigure(1, weight=1)   
         self.grid_columnconfigure(0, weight=1)
 
-        # Create navigation bar - modern dark blue
+        # Navigation bar
         nav_frame = tk.Frame(self, bg='#2c3e50', height=70) 
         nav_frame.grid(row=0, column=0, sticky='ew')
         nav_frame.grid_propagate(False)  
         
-        # Add logo/name to navbar
-        logo_frame = tk.Frame(nav_frame, bg='#2c3e50')
+        # Logo frame for navigation bar
+        logo_frame = tk.Frame(nav_frame, bg="#2c3e50")
         logo_frame.pack(side='left', padx=20)
         
+        # Designs at the left side of the navbar 
         logo_label = tk.Label(
             logo_frame, 
-            text="📦", 
+            image = self.login_icon, 
             font=("Arial", 24), 
             bg='#2c3e50', 
             fg='#ecf0f1'
@@ -407,55 +417,73 @@ class HomePage(tk.Frame):
         button_frame.pack(side='right', padx=20)
         
         # Create buttons based on role
-        if self.role == "admin":
-            self.admin_navbar(button_frame)
-        else:
-            self.user_navbar(button_frame)
-            self.user_id = 2
+        self.navbar(button_frame) 
 
         # Main content area - modern card design
-        self.main_content = tk.Frame(self, bg='#ffffff', bd=0, highlightthickness=0)
+        self.main_content = tk.Frame(self, bg="#ffffff", bd=0, highlightthickness=0)
         self.main_content.grid(row=1, column=0, sticky='nsew', padx=20, pady=20)
         self.main_content.grid_rowconfigure(0, weight=1)
         self.main_content.grid_columnconfigure(0, weight=1)
         self.current_page = None
 
-        # Add subtle shadow effect
-        shadow = tk.Frame(self, bg='#e0e5ec', bd=0)
+        # Shadow effect of the maincontent area
+        shadow = tk.Frame(self, bg="#b5b7bb", bd=0)
         shadow.place(in_=self.main_content, relx=0, rely=0, x=-4, y=-4, relwidth=1, relheight=1, width=8, height=8)
-        self.main_content.lift()  # Bring above shadow
+        self.main_content.lift() 
 
         self.show_content(DefaultPage, userlogin=False)  
 
-    def admin_navbar(self, parent_frame):
-        # Create modern styled buttons without changing names
+    # Admin navigation bar method
+    def navbar(self, parent_frame):
+        # Create modern styled buttons for user role without changing names
         for text, icon, cmd in self.buttons:
-            # Create a button frame for styling
-            btn_frame = tk.Frame(parent_frame, bg='#2c3e50', padx=5)
-            btn_frame.pack(side='left', padx=5)
-            
-            btn = tk.Button(
-                btn_frame,
-                text=text,
-                image=icon,
-                compound='left',
-                bg='#3498db' if text != "Logout" else '#e74c3c',  # Blue for most, red for logout
-                fg='white',
-                font=("Segoe UI", 10, "bold"),
-                bd=0,
-                padx=10,
-                pady=6,
-                relief='flat',
-                command=cmd,
-                cursor="hand2",
-                activebackground='#2980b9' if text != "Logout" else '#c0392b'
-            )
-            btn.pack(side='left', padx=5, pady=15)  # Added vertical padding here
-            
-            # Store reference to shift button
-            if text == "Start Shift":
-                self.shift_button = btn
+            button_frame = tk.Frame(parent_frame, bg='#2c3e50', padx=5)
+            button_frame.pack(side='left', padx=5)
+            if self.role == "user" and text not in ["Start Shift", "Logout"]:
+                # Button design
+                button = tk.Button(
+                    button_frame,
+                    text=text,
+                    image=icon,
+                    compound='left',
+                    bg='#3498db' if text != "Logout" else '#e74c3c',
+                    fg='white',
+                    font=("Segoe UI", 10, "bold"),
+                    bd=4,
+                    padx=10,
+                    pady=8,
+                    relief='raised',
+                    command=cmd,
+                    cursor="hand2",
+                    activebackground='#2980b9' if text != "Logout" else '#c0392b',
+                    height = 6  # Set fixed height in text lines
+                )
+                state = tk.DISABLED
+            else:
+                button = tk.Button(
+                    button_frame,
+                    text=text,
+                    image=icon,
+                    compound='left',
+                    bg='#3498db' if text != "Logout" else '#e74c3c',
+                    fg='white',
+                    font=("Segoe UI", 10, "bold"),
+                    bd=4,
+                    padx=10,
+                    pady=8,
+                    relief='raised',
+                    command=cmd,
+                    cursor="hand2",
+                    activebackground='#2980b9' if text != "Logout" else '#c0392b',
+                    height = 6  # Set fixed height in text lines
+                )
+                button.pack()
                 
+                # Store reference to shift button
+                if text == "Start Shift":
+                    self.shift_button = button            
+                
+    # When Start Shift button is clicked, it will toggle the shift status            
     def toggle_shift(self):
         timenow = datetime.datetime.now().strftime("%I:%M:%S:%p")
         shift_date = datetime.datetime.now().strftime("%Y-%m-%d")
@@ -471,6 +499,7 @@ class HomePage(tk.Frame):
             messagebox.showinfo("Start Shift", f"{shift_type} Shift started successfully at {timenow}")
             self.shift_button.config(text="End Shift")
             self.shift_started = True  
+            self.controller.shift_started = True 
             self.show_content(DefaultPage, userlogin = True)
         else:
             cursor.execute('SELECT shift_id FROM shift WHERE user_id = ? AND shift_end_time IS NULL ORDER BY shift_id DESC LIMIT 1', (user_id,))
@@ -482,40 +511,12 @@ class HomePage(tk.Frame):
             messagebox.showinfo("End shift",f"{shift_type} Shift ended at {timenow}")
             self.shift_button.config(text="Start Shift")
             self.shift_started = False
+            self.controller.shift_started = False
             self.show_content(DefaultPage, userlogin = False)
             
         conn.close()
-        
-    def user_navbar(self, parent_frame):
-        # Create modern styled buttons for user role without changing names
-        for text, icon, cmd in self.buttons:
-            if text in ["Start Shift", "Logout"]:
-                # Create a button frame for styling
-                btn_frame = tk.Frame(parent_frame, bg='#2c3e50', padx=5)
-                btn_frame.pack(side='left', padx=5)
-                
-                btn = tk.Button(
-                    btn_frame,
-                    text=text,
-                    image=icon,
-                    compound='left',
-                    bg='#3498db' if text != "Logout" else '#e74c3c',
-                    fg='white',
-                    font=("Segoe UI", 10, "bold"),
-                    bd=2,
-                    padx=10,
-                    pady=8,
-                    relief='raised',
-                    command=cmd,
-                    cursor="hand2",
-                    activebackground='#2980b9' if text != "Logout" else '#c0392b'
-                )
-                btn.pack()
-                
-                # Store reference to shift button
-                if text == "Start Shift":
-                    self.shift_button = btn
-        
+    
+    # Method to handle button clicks 
     def Onclick(self, number):
         def income_report(time_period):
             messagebox.showinfo("Income Report", "Income report generated successfully!")
@@ -539,9 +540,13 @@ class HomePage(tk.Frame):
             case 6:
                 self.show_content(TransactionsPage)
             case 7:
-                if messagebox.askyesno("Logout", "Are you sure you want to logout?"):
-                    self.controller.show_frame("LoginPage")  
-                    
+                if self.controller.shift_started:
+                    messagebox.showwarning("Action Blocked", "You cannot logout while a shift is active. Please end the shift first.")
+                else:
+                    if messagebox.askyesno("Logout", "Are you sure you want to logout?"):
+                        self.controller.show_frame("LoginPage")  
+    
+    #method for switching frames when buttons are clicked                
     def show_content(self, PageClass, *args, **kwargs):
         if self.current_page:
             self.current_page.destroy()
@@ -613,10 +618,7 @@ class DefaultPage(tk.Frame):
         conn.close()
         if self.userlogin:
             self.last_logout_label.config(text="")
-            self.after(1000, self.updateclock)
-            
-            
-        
+            self.after(1000, self.updateclock)   
                 
 class DeliveryPage(tk.Frame):
     def __init__(self, parent):
