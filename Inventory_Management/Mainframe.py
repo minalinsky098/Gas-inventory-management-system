@@ -344,6 +344,7 @@ class LoginPage(tk.Frame):
         login_btn.bind("<Up>", lambda e: self.passwordtextbox.focus_set())
 
     def Onclick(self):
+        self.passwordtextbox.unbind("<Return>")
         username = self.usernametextbox.get()
         password = self.passwordtextbox.get()
         success, user_id= check_login(username, password)
@@ -560,6 +561,19 @@ class DefaultPage(tk.Frame):
         
         self.userlogin = userlogin
         self.user_id = user_id
+        grids = ("top_left","top_middle","top_right",
+                 "middle_left","middle_middle","middle_right"
+                 )
+        #TO BE REFACTORED BUTTON AND TEXTBOX NAMES
+        pump_widgets = ("diesel1_button", "diesel2_button", "premium1_button", 
+                            "premium2_button", "premium3_button", "unleaded_button",
+                            "diesel1_volume_textbox","diesel2_volume_textbox","premium1_volume_textbox",
+                            "premium2_volume_textbox","premium3_volume_textbox","unleaded_volume_textbox")
+        pump_textbox = ("diesel1_volume_textbox","diesel2_volume_textbox","premium1_volume_textbox",
+                            "premium2_volume_textbox","premium3_volume_textbox","unleaded_volume_textbox",
+                            "diesel1_price_textbox","diesel2_price_textbox","premium1_price_textbox",
+                            "premium2_price_textbox","premium3_price_textbox","unleaded_price_textbox")
+        pump_texts = ("Diesel 1", "Diesel 2", "Premium 1", "Premium 2", "Premium 3", "Unleaded")
         for r in range(3):
             self.grid_rowconfigure(r, weight=1, minsize=100)
             for c in range(3):
@@ -570,6 +584,14 @@ class DefaultPage(tk.Frame):
         top_left.grid(row = 0, column = 0, sticky="nsew", padx=10, pady=10)
         top_left.grid_propagate(False)
         
+        """
+        for button, gridposition, pump_text in pump_widgets, grids, pump_texts:
+            getattr(self, button) = tk.Button
+            (gridposition, 
+            text = pump_text, 
+             compound = "left",
+             )
+        """
         self.diesel1_button = tk.Button(
                     top_left,
                     text="Diesel 1",
@@ -694,7 +716,7 @@ class DefaultPage(tk.Frame):
         self.premium1_price_textbox.pack(anchor='center', padx= 10, pady= 5)
         
         # Container frame on middle left square
-        middle_left = tk.Frame(self, bg="#91EE91" , bd = 2 , relief="solid",  width=50)
+        middle_left = tk.Frame(self, bg="#91C4EE" , bd = 2 , relief="solid",  width=50)
         middle_left.grid(row = 1, column = 0, sticky="nsew", padx=10, pady=10)
         middle_left.grid_propagate(False)
         
@@ -737,7 +759,7 @@ class DefaultPage(tk.Frame):
         self.premium2_price_textbox.pack(anchor='center', padx= 10, pady= 5)
 
         # Container frame on middle middle square
-        middle_middle = tk.Frame(self, bg="#91EE91" , bd = 2 , relief="solid",  width=50)
+        middle_middle = tk.Frame(self, bg="#91C4EE" , bd = 2 , relief="solid",  width=50)
         middle_middle.grid(row = 1, column = 1, sticky="nsew", padx=10, pady=10)
         middle_middle.grid_propagate(False)
         
@@ -780,7 +802,7 @@ class DefaultPage(tk.Frame):
         self.premium3_price_textbox.pack(anchor='center', padx= 10, pady= 5)
 
         # Container frame on middle right square
-        middle_right = tk.Frame(self, bg="#91EE91" , bd = 2 , relief="solid",  width=50)
+        middle_right = tk.Frame(self, bg="#91C4EE" , bd = 2 , relief="solid",  width=50)
         middle_right.grid(row = 1, column = 2, sticky="nsew", padx=10, pady=10)
         middle_right.grid_propagate(False)
         
@@ -823,15 +845,50 @@ class DefaultPage(tk.Frame):
         self.unleaded_price_textbox.pack(anchor='center', padx= 10, pady= 5)
         
         # Container frame on bottom left square
-        bottom_left = tk.Frame(self, bg="#91EE91" , bd = 2 , relief="solid",  width=50)
+        bottom_left = tk.Frame(self, bg="#91C4EE" , bd = 2 , relief="solid",  width=50)
         bottom_left.grid(row = 2, column = 0, sticky="nsew", padx=10, pady=10)
         bottom_left.grid_propagate(False)
+        
+        clear_button = tk.Button(bottom_left,
+                    text="Clear",
+                    bg="#DD1F1F", 
+                    fg='white',
+                    font=("Segoe UI", 10, "bold"),
+                    bd=4,
+                    padx=10,
+                    pady=5,
+                    relief='raised',
+                    command=lambda: self.Onclick(6),
+                    cursor="hand2",
+                    activebackground="#F10A0A",
+                    width = 15,
+                    height = 2 
+        )
+        clear_button.pack(anchor='center', padx=10, pady=20)
 
         # Container frame on bottom middle square
-        bottom_middle = tk.Frame(self, bg="#91EE91" , bd = 2 , relief="solid",  width=50)
+        bottom_middle = tk.Frame(self, bg="#91C4EE" , bd = 2 , relief="solid",  width=50)
         bottom_middle.grid(row = 2, column = 1, sticky="nsew", padx=10, pady=10)
         bottom_middle.grid_propagate(False)
-
+        
+        submit_button = tk.Button(bottom_middle,
+                    text="Submit",
+                    bg="#0EAF0E", 
+                    fg='white',
+                    font=("Segoe UI", 10, "bold"),
+                    bd=4,
+                    padx=10,
+                    pady=5,
+                    relief='raised',
+                    command=lambda: self.submit(),
+                    cursor="hand2",
+                    activebackground="#0A820A",
+                    width = 15,
+                    height = 2 
+        )
+        submit_button.pack(anchor='center', padx=10, pady = 20)
+        
+        
         # Container frame on lower right square
         bottom_right = tk.Frame(self, bg="#91C4EE" , bd = 2 , relief="solid",  width=50)
         bottom_right.grid(row=2, column=2, sticky="nsew", padx=10, pady=10)
@@ -845,17 +902,10 @@ class DefaultPage(tk.Frame):
         self.last_logout_label = tk.Label(bottom_right, font=("Comic Sans MS", 14), bg="#91C4EE", anchor='e', justify='right')
         self.last_logout_label.pack(side='bottom', anchor='e', padx=10, pady=(0,2), fill='x')
         self.updateclock()  
-
+        
+        
+        self.bind_all("<Return>", lambda e: self.submit())
             
-        #TO BE REFACTORED BUTTON AND TEXTBOX NAMES
-        pump_widgets = ("diesel1_button", "diesel2_button", "premium1_button", 
-                            "premium2_button", "premium3_button", "unleaded_button",
-                            "diesel1_volume_textbox","diesel2_volume_textbox","premium1_volume_textbox",
-                            "premium2_volume_textbox","premium3_volume_textbox","unleaded_volume_textbox")
-        pump_textbox = ("diesel1_volume_textbox","diesel2_volume_textbox","premium1_volume_textbox",
-                            "premium2_volume_textbox","premium3_volume_textbox","unleaded_volume_textbox",
-                            "diesel1_price_textbox","diesel2_price_textbox","premium1_price_textbox",
-                            "premium2_price_textbox","premium3_price_textbox","unleaded_price_textbox")
         # state of the widgets based if the user has pressed the shift button
         if self.userlogin:  
             
@@ -871,7 +921,12 @@ class DefaultPage(tk.Frame):
                 
             for label in pump_textbox:
                 getattr(self, label).delete(0,tk.END)
-
+                
+    def submit(self):
+        answer = messagebox.askokcancel("Transaction Confirmation", 
+                            "Are you sure all the information entered is correct")   
+        if answer:
+            messagebox.showinfo("Transaction Confirmation", "Transaction Recorded 😊")         
     def update_price(self, number):
         match number:
             case 1:
