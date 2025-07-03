@@ -60,7 +60,18 @@ def setup_database():
         )
     ''')
     
-    # --- Pre-populate fuel_type table if empty ---
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS price(
+        price_id INTEGER PRIMARY KEY AUTOINCREMENT,
+        pump_id INTEGER NOT NULL,
+        price INTEGER NOT NULL, 
+        effective_date DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (pump_id) REFERENCES pump(pump_id)
+        )
+        '''
+    )
+    
+    # Set the fuel types
     cursor.execute('SELECT COUNT(*) FROM fuel_type')
     if cursor.fetchone()[0] == 0:
         cursor.execute('INSERT INTO fuel_type (fuel_name) VALUES (?)', ('Diesel',))
@@ -69,7 +80,6 @@ def setup_database():
         premium_id = cursor.lastrowid
         cursor.execute('INSERT INTO fuel_type (fuel_name) VALUES (?)', ('Unleaded',))
         unleaded_id = cursor.lastrowid
-
        
         pumps = [
             (diesel_id, 'Diesel 1'), 
@@ -541,9 +551,12 @@ class DefaultPage(tk.Frame):
     def __init__(self, parent, userlogin = False, user_id = None):
         super().__init__(parent, bg='#91C4EE')
         
-        diesel1_icon = ImageTk.PhotoImage(Image.open("images/diesel_1.png").resize((24, 24)))
-        diesel2_icon = ImageTk.PhotoImage(Image.open("images/diesel_2.png").resize((24, 24)))
-        premium1_icon = ImageTk.PhotoImage(Image.open("images/premium_1.png").resize((24,24)))
+        diesel1_icon = ImageTk.PhotoImage(Image.open("images/diesel_1.png").resize((48, 48)))
+        diesel2_icon = ImageTk.PhotoImage(Image.open("images/diesel_2.png").resize((48, 48)))
+        premium1_icon = ImageTk.PhotoImage(Image.open("images/premium_1.png").resize((48, 48)))
+        premium2_icon = ImageTk.PhotoImage(Image.open("images/premium_2.png").resize((48, 48)))
+        premium3_icon = ImageTk.PhotoImage(Image.open("images/premium_3.png").resize((48, 48)))
+        unleaded_icon = ImageTk.PhotoImage(Image.open("images/unleaded.png").resize((48, 48)))
         
         self.userlogin = userlogin
         self.user_id = user_id
@@ -615,7 +628,6 @@ class DefaultPage(tk.Frame):
                     command=lambda: self.Onclick(2),
                     cursor="hand2",
                     activebackground="#4f5a62",
-                    state = "disabled",
                     width = 150,
                     height = 30 
         )
@@ -658,7 +670,6 @@ class DefaultPage(tk.Frame):
                     command=lambda: self.Onclick(3),
                     cursor="hand2",
                     activebackground="#4f5a62",
-                    state = "disabled",
                     width = 150,
                     height = 30 
         )
@@ -686,16 +697,130 @@ class DefaultPage(tk.Frame):
         middle_left = tk.Frame(self, bg="#91EE91" , bd = 2 , relief="solid",  width=50)
         middle_left.grid(row = 1, column = 0, sticky="nsew", padx=10, pady=10)
         middle_left.grid_propagate(False)
+        
+        self.premium2_button = tk.Button(
+                    middle_left,
+                    text="Premium 2",
+                    image= premium2_icon,
+                    compound='left',
+                    bg="#70818c", 
+                    fg='white',
+                    font=("Segoe UI", 10, "bold"),
+                    bd=4,
+                    padx=10,
+                    pady=5,
+                    relief='raised',
+                    command=lambda: self.Onclick(4),
+                    cursor="hand2",
+                    activebackground="#4f5a62",
+                    width = 150,
+                    height = 30 
+        )
+        self.premium2_button.pack(anchor='center', padx=10, pady=5)
+        self.premium2_volume_label = tk.Label(middle_left, text= "Premium 2 Volume:",font=("Comic Sans MS", 14), bg = "#91C4EE")
+        self.premium2_volume_label.pack(anchor = 'center', padx = 10, pady = 5)
+        self.premium2_volume_textbox = ttk.Entry(
+            middle_left, 
+            width=20, 
+            font=("Comic Sans MS", 12)
+        )
+        self.premium2_volume_textbox.pack(anchor='center', padx= 10, pady= 5)
+        self.premium2_volume_textbox.bind('<KeyRelease>', lambda e: self.update_price(4))
+        self.premium2_price_label = tk.Label(middle_left, text= "Price:",font=("Comic Sans MS", 14), bg = "#91C4EE")
+        self.premium2_price_label.pack(anchor = 'center', padx = 10, pady = 5)
+        self.premium2_price_textbox = ttk.Entry(
+            middle_left, 
+            width=20, 
+            font=("Comic Sans MS", 12),
+            state= "disabled"
+        )
+        self.premium2_price_textbox.pack(anchor='center', padx= 10, pady= 5)
 
         # Container frame on middle middle square
         middle_middle = tk.Frame(self, bg="#91EE91" , bd = 2 , relief="solid",  width=50)
         middle_middle.grid(row = 1, column = 1, sticky="nsew", padx=10, pady=10)
         middle_middle.grid_propagate(False)
+        
+        self.premium3_button = tk.Button(
+                    middle_middle,
+                    text="Premium 3",
+                    image= premium3_icon,
+                    compound='left',
+                    bg="#70818c", 
+                    fg='white',
+                    font=("Segoe UI", 10, "bold"),
+                    bd=4,
+                    padx=10,
+                    pady=5,
+                    relief='raised',
+                    command=lambda: self.Onclick(5),
+                    cursor="hand2",
+                    activebackground="#4f5a62",
+                    width = 150,
+                    height = 30 
+        )
+        self.premium3_button.pack(anchor='center', padx=10, pady=5)
+        self.premium3_volume_label = tk.Label(middle_middle, text= "Premium 3 Volume:",font=("Comic Sans MS", 14), bg = "#91C4EE")
+        self.premium3_volume_label.pack(anchor = 'center', padx = 10, pady = 5)
+        self.premium3_volume_textbox = ttk.Entry(
+            middle_middle, 
+            width=20, 
+            font=("Comic Sans MS", 12)
+        )
+        self.premium3_volume_textbox.pack(anchor='center', padx= 10, pady= 5)
+        self.premium3_volume_textbox.bind('<KeyRelease>', lambda e: self.update_price(5))
+        self.premium3_price_label = tk.Label(middle_middle, text= "Price:",font=("Comic Sans MS", 14), bg = "#91C4EE")
+        self.premium3_price_label.pack(anchor = 'center', padx = 10, pady = 5)
+        self.premium3_price_textbox = ttk.Entry(
+            middle_middle, 
+            width=20, 
+            font=("Comic Sans MS", 12),
+            state= "disabled"
+        )
+        self.premium3_price_textbox.pack(anchor='center', padx= 10, pady= 5)
 
         # Container frame on middle right square
         middle_right = tk.Frame(self, bg="#91EE91" , bd = 2 , relief="solid",  width=50)
         middle_right.grid(row = 1, column = 2, sticky="nsew", padx=10, pady=10)
         middle_right.grid_propagate(False)
+        
+        self.unleaded_button = tk.Button(
+                    middle_right,
+                    text="Unleaded",
+                    image= unleaded_icon,
+                    compound='left',
+                    bg="#70818c", 
+                    fg='white',
+                    font=("Segoe UI", 10, "bold"),
+                    bd=4,
+                    padx=10,
+                    pady=5,
+                    relief='raised',
+                    command=lambda: self.Onclick(6),
+                    cursor="hand2",
+                    activebackground="#4f5a62",
+                    width = 150,
+                    height = 30 
+        )
+        self.unleaded_button.pack(anchor='center', padx=10, pady=5)
+        self.unleaded_volume_label = tk.Label(middle_right, text= "Unleaded Volume:",font=("Comic Sans MS", 14), bg = "#91C4EE")
+        self.unleaded_volume_label.pack(anchor = 'center', padx = 10, pady = 5)
+        self.unleaded_volume_textbox = ttk.Entry(
+            middle_right, 
+            width=20, 
+            font=("Comic Sans MS", 12)
+        )
+        self.unleaded_volume_textbox.pack(anchor='center', padx= 10, pady= 5)
+        self.unleaded_volume_textbox.bind('<KeyRelease>', lambda e: self.update_price(6))
+        self.unleaded_price_label = tk.Label(middle_right, text= "Price:",font=("Comic Sans MS", 14), bg = "#91C4EE")
+        self.unleaded_price_label.pack(anchor = 'center', padx = 10, pady = 5)
+        self.unleaded_price_textbox = ttk.Entry(
+            middle_right, 
+            width=20, 
+            font=("Comic Sans MS", 12),
+            state= "disabled"
+        )
+        self.unleaded_price_textbox.pack(anchor='center', padx= 10, pady= 5)
         
         # Container frame on bottom left square
         bottom_left = tk.Frame(self, bg="#91EE91" , bd = 2 , relief="solid",  width=50)
@@ -720,33 +845,33 @@ class DefaultPage(tk.Frame):
         self.last_logout_label = tk.Label(bottom_right, font=("Comic Sans MS", 14), bg="#91C4EE", anchor='e', justify='right')
         self.last_logout_label.pack(side='bottom', anchor='e', padx=10, pady=(0,2), fill='x')
         self.updateclock()  
-        
+
+            
+        #TO BE REFACTORED BUTTON AND TEXTBOX NAMES
+        pump_widgets = ("diesel1_button", "diesel2_button", "premium1_button", 
+                            "premium2_button", "premium3_button", "unleaded_button",
+                            "diesel1_volume_textbox","diesel2_volume_textbox","premium1_volume_textbox",
+                            "premium2_volume_textbox","premium3_volume_textbox","unleaded_volume_textbox")
+        pump_textbox = ("diesel1_volume_textbox","diesel2_volume_textbox","premium1_volume_textbox",
+                            "premium2_volume_textbox","premium3_volume_textbox","unleaded_volume_textbox",
+                            "diesel1_price_textbox","diesel2_price_textbox","premium1_price_textbox",
+                            "premium2_price_textbox","premium3_price_textbox","unleaded_price_textbox")
+        # state of the widgets based if the user has pressed the shift button
         if self.userlogin:  
-            self.diesel1_button.config(state = "normal")
-            self.diesel2_button.config(state = "normal")
-            self.premium1_button.config(state = "normal")
-            self.diesel1_volume_textbox.config(state = "normal")
-            self.diesel2_volume_textbox.config(state = "normal")
-            self.premium1_volume_textbox.config(state = "normal")
-            self.diesel1_volume_textbox.delete(0, tk.END)
-            self.diesel2_volume_textbox.delete(0, tk.END)
-            self.premium1_volume_textbox.delete(0, tk.END)
-            self.diesel1_price_textbox.delete(0, tk.END)
-            self.diesel2_price_textbox.delete(0, tk.END)
-            self.premium1_price_textbox.delete(0, tk.END)    
+            
+            for widget_label in pump_widgets:
+                getattr(self, widget_label).config(state = "normal")
+                
+            for label in pump_textbox:
+                getattr(self, label).delete(0,tk.END)
+        
         else:
-            self.diesel1_button.config(state = "disabled")
-            self.diesel2_button.config(state = "disabled")
-            self.premium1_button.config(state = "disabled")
-            self.diesel1_volume_textbox.config(state = "disabled")
-            self.diesel2_volume_textbox.config(state = "disabled")
-            self.premium1_volume_textbox.config(state = "disabled")
-            self.diesel1_volume_textbox.delete(0, tk.END)
-            self.diesel2_volume_textbox.delete(0, tk.END)
-            self.premium1_volume_textbox.delete(0, tk.END)
-            self.diesel1_price_textbox.delete(0, tk.END)
-            self.diesel2_price_textbox.delete(0, tk.END)
-            self.premium1_price_textbox.delete(0, tk.END)      
+            for widget_label in pump_widgets:
+                getattr(self, widget_label).config(state = "disabled")
+                
+            for label in pump_textbox:
+                getattr(self, label).delete(0,tk.END)
+
     def update_price(self, number):
         match number:
             case 1:
@@ -778,10 +903,43 @@ class DefaultPage(tk.Frame):
                     price_str = f"{price:.2f}"
                 except ValueError:
                     price_str = ""
-                self.premium1_volume_textbox.config(state="normal")
-                self.premium1_volume_textbox.delete(0, tk.END)
-                self.premium1_volume_textbox.insert(0, price_str)
-                self.premium1_volume_textbox.config(state="disabled")      
+                self.premium1_price_textbox.config(state="normal")
+                self.premium1_price_textbox.delete(0, tk.END)
+                self.premium1_price_textbox.insert(0, price_str)
+                self.premium1_price_textbox.config(state="disabled")  
+            case 4:
+                try:
+                    volume = float(self.premium2_volume_textbox.get())
+                    price = volume *50
+                    price_str = f"{price:.2f}"
+                except ValueError:
+                    price_str = ""
+                self.premium2_price_textbox.config(state="normal")
+                self.premium2_price_textbox.delete(0, tk.END)
+                self.premium2_price_textbox.insert(0, price_str)
+                self.premium2_price_textbox.config(state="disabled")  
+            case 5:
+                try:
+                    volume = float(self.premium3_volume_textbox.get())
+                    price = volume *50
+                    price_str = f"{price:.2f}"
+                except ValueError:
+                    price_str = ""
+                self.premium3_price_textbox.config(state="normal")
+                self.premium3_price_textbox.delete(0, tk.END)
+                self.premium3_price_textbox.insert(0, price_str)
+                self.premium3_price_textbox.config(state="disabled")
+            case 6:
+                try:
+                    volume = float(self.unleaded_volume_textbox.get())
+                    price = volume *50
+                    price_str = f"{price:.2f}"
+                except ValueError:
+                    price_str = ""
+                self.unleaded_price_textbox.config(state="normal")
+                self.unleaded_price_textbox.delete(0, tk.END)
+                self.unleaded_price_textbox.insert(0, price_str)
+                self.unleaded_price_textbox.config(state="disabled")        
             
     def Onclick(self, button_number):
         match button_number:
@@ -796,10 +954,13 @@ class DefaultPage(tk.Frame):
                 self.premium1_volume_textbox.focus_set()
             case 4:
                 print("Premium 2 clicked")
+                self.premium2_volume_textbox.focus_set()
             case 5:
                 print("Premium 3 clicked")
+                self.premium3_volume_textbox.focus_set()
             case 6:
                 print("Unleaded clicked")  
+                self.unleaded_volume_textbox.focus_set()
        
     def updateclock(self):
         conn = sqlite3.connect('Databases/inventory_db.db')
