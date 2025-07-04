@@ -171,11 +171,12 @@ class ProjectFrame(tk.Tk):
                 self.frames["HomePage"].destroy()
             self.frames["HomePage"] = HomePage(self, self, role, user_id)
         self.frames[name].place(relwidth=1, relheight=1)
-    
+        self.homepage = self.frames.get("HomePage")
     # Error message when shift is active
     def on_closing(self):
         if self.shift_started:
             messagebox.showwarning("Action Blocked", "You cannot exit the program while logged in. Please logout first.")
+            self.homepage.show_content(DefaultPage, userlogin = True)
         else:
             self.destroy()
 
@@ -442,8 +443,6 @@ class HomePage(tk.Frame):
         shadow.place(in_=self.main_content, relx=0, rely=0, x=-4, y=-4, relwidth=1, relheight=1, width=8, height=8)
         self.main_content.lift() 
 
-        self.show_content(DefaultPage, userlogin=False)  
-
     # Admin navigation bar method
     def navbar(self, parent_frame):
         # Create modern styled buttons for user role without changing names
@@ -506,7 +505,6 @@ class HomePage(tk.Frame):
             self.shift_started = False
             self.controller.shift_started = False
             self.show_content(DefaultPage, userlogin = False)
-            
         conn.close()
     
     # Method to handle button clicks 
@@ -535,6 +533,7 @@ class HomePage(tk.Frame):
             case 7:
                 if self.controller.shift_started:
                     messagebox.showwarning("Action Blocked", "You cannot logout while a shift is active. Please end the shift first.")
+                    self.show_content(DefaultPage, userlogin = True)
                 else:
                     if messagebox.askyesno("Logout", "Are you sure you want to logout?"):
                         self.controller.show_frame("LoginPage")  
@@ -907,8 +906,8 @@ class DefaultPage(tk.Frame):
         self.bind_all("<Return>", lambda e: self.submit())
             
         # state of the widgets based if the user has pressed the shift button
+        #BUG NOT HERE
         if self.userlogin:  
-            
             for widget_label in pump_widgets:
                 getattr(self, widget_label).config(state = "normal")
                 
