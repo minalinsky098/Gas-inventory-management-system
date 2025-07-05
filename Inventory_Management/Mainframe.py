@@ -166,12 +166,19 @@ class ProjectFrame(tk.Tk):
     def show_frame(self, name, role = None, user_id = None):
         for frame in self.frames.values():
             frame.place_forget()
+            
+            #if hasattr(frame, 'unbind_enter'):
+            #   frame.unbind_enter()
+            
         if name == "HomePage":
             if "HomePage" in self.frames:
                 self.frames["HomePage"].destroy()
             self.frames["HomePage"] = HomePage(self, self, role, user_id)
         self.frames[name].place(relwidth=1, relheight=1)
         self.homepage = self.frames.get("HomePage")
+        if name == "LoginPage":
+            self.frames[name].bind_enter()
+        
     # Error message when shift is active
     def on_closing(self):
         if self.shift_started:
@@ -283,6 +290,7 @@ class LoginPage(tk.Frame):
         password_frame = tk.Frame(login_card, bg=self.light_text)
         password_frame.grid(row=4, column=1, sticky='ew', pady=5)
         
+        #password label
         tk.Label(
             password_frame, 
             text="🔒 Password", 
@@ -292,6 +300,7 @@ class LoginPage(tk.Frame):
             anchor='w'
         ).pack(fill='x', padx=5)
         
+        #password textbox
         self.passwordtextbox = ttk.Entry(
             password_frame, 
             show='*', 
@@ -341,9 +350,15 @@ class LoginPage(tk.Frame):
         self.usernametextbox.bind("<Return>", lambda e: self.passwordtextbox.focus_set())
         self.usernametextbox.bind("<Down>", lambda e: self.passwordtextbox.focus_set())
         self.passwordtextbox.bind("<Up>", lambda e: self.usernametextbox.focus_set())
-        self.passwordtextbox.bind("<Return>", lambda e: self.Onclick())
         login_btn.bind("<Up>", lambda e: self.passwordtextbox.focus_set())
+         
+    def bind_enter(self):
+        self.passwordtextbox.bind("<Return>", lambda e: self.Onclick())
 
+    def unbind_enter(self):
+        self.unbind_all("<Return>")
+
+    # Method to handle login button click
     def Onclick(self):
         self.passwordtextbox.unbind("<Return>")
         username = self.usernametextbox.get()
@@ -374,6 +389,7 @@ class HomePage(tk.Frame):
         self.logout_icon = ImageTk.PhotoImage(Image.open("images/logout.png").resize((24, 24)))
         self.login_icon = ImageTk.PhotoImage(Image.open("images/login.png").resize((36, 36)))
         
+        #navigation buttons 
         self.buttons = [
             ("Start Shift", self.shift_icon, lambda: self.Onclick(1)),
             ("Income", self.income_icon, lambda: self.Onclick(2)),
@@ -562,6 +578,9 @@ class DefaultPage(tk.Frame):
         
         self.userlogin = userlogin
         self.user_id = user_id
+        
+        self.dummy_focus = tk.Frame(self)
+        self.dummy_focus.place(x=0, y=0, width=1, height=1)
         #TO BE REFACTORED BUTTON AND TEXTBOX NAMES
         
         for r in range(3):
@@ -599,6 +618,7 @@ class DefaultPage(tk.Frame):
         middle_right.grid(row = 1, column = 2, sticky="nsew", padx=10, pady=10)
         middle_right.grid_propagate(False)
         
+        #widget list
         self.widget_configs = [
         ("diesel1_button", top_left, self.diesel1_icon, "Diesel 1", 1, "diesel1_volume_textbox", "diesel1_price_textbox", "Diesel 1 Volume:"),
         ("diesel2_button", top_middle, self.diesel2_icon, "Diesel 2", 2, "diesel2_volume_textbox","diesel2_price_textbox", "Diesel 2 Volume:"),
@@ -636,6 +656,7 @@ class DefaultPage(tk.Frame):
             width=20, 
             font=("Comic Sans MS", 12)
             )
+            volumetxbx.bind("<Return>", lambda e: self.submit())
             volumetxbx.pack(anchor='center', padx= 10, pady= 5)
             price_label =tk.Label(gridposition, text= "Price:",font=("Comic Sans MS", 14), bg = "#91C4EE")
             price_label.pack(anchor = 'center', padx = 10, pady = 5)
@@ -695,7 +716,6 @@ class DefaultPage(tk.Frame):
         )
         submit_button.pack(anchor='center', padx=10, pady = 20)
         
-        
         # Container frame on lower right square
         bottom_right = tk.Frame(self, bg="#91C4EE" , bd = 2 , relief="solid",  width=50)
         bottom_right.grid(row=2, column=2, sticky="nsew", padx=10, pady=10)
@@ -709,12 +729,8 @@ class DefaultPage(tk.Frame):
         self.last_logout_label = tk.Label(bottom_right, font=("Comic Sans MS", 14), bg="#91C4EE", anchor='e', justify='right')
         self.last_logout_label.pack(side='bottom', anchor='e', padx=10, pady=(0,2), fill='x')
         self.updateclock()  
-        
-        
-        self.bind_all("<Return>", lambda e: self.submit())
-            
+        self.bind_all("<Button-1>", self.remove_focus)
         # state of the widgets based if the user has pressed the shift button
-        
         if self.userlogin: 
             # enabling the buttons when the user has pressed start shift
             for widget in self.widget_configs:
@@ -736,7 +752,12 @@ class DefaultPage(tk.Frame):
             for textbox in self.widget_configs:
                 getattr(self, textbox[5]).delete(0,tk.END)
                 getattr(self, textbox[6]).delete(0,tk.END)
-                
+    def remove_focus(self, event):
+        widget = event.widget
+    # Only remove focus if click is NOT on an Entry
+        if not isinstance(widget, ttk.Entry):
+            self.dummy_focus.focus_set()
+            
     def submit(self):
         answer = messagebox.askokcancel("Transaction Confirmation", 
                             "Are you sure all the information entered is correct")   
