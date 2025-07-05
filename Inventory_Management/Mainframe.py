@@ -963,8 +963,7 @@ class DefaultPage(tk.Frame):
                 if self.dummy_focus.winfo_exists():
                     self.dummy_focus.focus_set()
             except tk.TclError:
-                pass  # Widget no longer exists, ignore
- 
+                pass  # Widget no longer exists, ignore 
                 
 class DeliveryPage(tk.Frame):
     def __init__(self, parent):
