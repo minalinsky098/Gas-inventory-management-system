@@ -959,7 +959,11 @@ class DefaultPage(tk.Frame):
     def remove_focus(self, event):
         widget = event.widget
         if not isinstance(widget, ttk.Entry):
-            self.dummy_focus.focus_set()
+            try:
+                if self.dummy_focus.winfo_exists():
+                    self.dummy_focus.focus_set()
+            except tk.TclError:
+                pass  # Widget no longer exists, ignore
  
                 
 class DeliveryPage(tk.Frame):
@@ -980,11 +984,16 @@ class InventoryPage(tk.Frame):
 class TransactionsPage(tk.Frame):
     def __init__(self, parent):
         super().__init__(parent, bg='white')
-        # Main content area with a scrollable table
-
         # Example: Scrollable table using ttk.Treeview
-        columns = ('Pump number', 'Fuel_type', 'Volume', 'Price', 'Date')
-        tree = ttk.Treeview(self, columns=columns, show='headings')
+        style = ttk.Style()
+        style.configure("Custom.Treeview",
+                        background="white",
+                        foreground="black",
+                        rowheight=25,
+                        fieldbackground="white")
+        
+        columns = ('Pump number', 'Fuel_type', 'Volume(Liters)', 'Price(Pesos)', 'Date')
+        tree = ttk.Treeview(self, columns=columns, show='headings', style= "Custom.Treeview")
         for col in columns:
             tree.heading(col, text=col)
             tree.column(col, anchor='center', width=100)
@@ -998,11 +1007,24 @@ class TransactionsPage(tk.Frame):
         # Example data
         connect = sqlite3.connect('Databases/inventory_db.db')
         cursor = connect.cursor()
-        cursor.execute('SELECT * FROM transactions')
+        cursor.execute('''SELECT 
+                       pump.pump_id AS "Pump_number", 
+                       fuel_type.fuel_name AS "Fuel_type",
+                       transactions.Volume, 
+                       transactions.Price, 
+                       transactions.Date 
+                       FROM transactions
+                       JOIN pump ON transactions.pump_id = pump.pump_id
+                       JOIN fuel_type ON pump.fuel_type_id = fuel_type.fuel_type_id
+                       ORDER BY transactions.transaction_id''')
         rows = cursor.fetchall()
         connect.close()
-        for values in rows:
-            tree.insert('', 'end', values=values)
+        for i, values in enumerate(rows):
+            tag = 'evenrow' if i % 2 == 0 else 'oddrow'
+            tree.insert('', 'end', values=values, tags=(tag,))
+        tree.tag_configure('evenrow', background="#86ea86")
+        tree.tag_configure('oddrow', background="#7cacdf")
+        style.map('Custom.Treeview', background=[('selected', "#8e8e8e")])
 
 # --- Main program ---
 setup_database()
