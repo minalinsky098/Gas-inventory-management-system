@@ -55,7 +55,8 @@ def setup_database():
             shift_id INTEGER NOT NULL,
             pump_id INTEGER NOT NULL,
             Volume REAL NOT NULL,
-            Date DATETIME DEFAULT CURRENT_TIMESTAMP,
+            Price REAL NOT NULL,
+            Date TEXT DEFAULT (DATE('now')),
             FOREIGN KEY (shift_id) REFERENCES shift(shift_id),
             FOREIGN KEY (pump_id) REFERENCES pump(pump_id)
         )
@@ -832,21 +833,29 @@ class DefaultPage(tk.Frame):
                 if str(volume_entry['state']) == 'normal':
                     volume_value = volume_entry.get()
                     price_value = price_entry.get()
-                    print(f"Enabled: {config[3]}, Volume: {volume_value}, Price: {price_value}")
+                    if volume_value == "":
+                        messagebox.showinfo("Input Error", f"Please enter a volume for {config[3]}.")
+                    else:
+                        print(f"Enabled: {config[3]}, Volume: {volume_value}, Price: {price_value}")
+                        conn = sqlite3.connect('Databases/inventory_db.db')
+                        cursor = conn.cursor()
+                        pump_label = config[3]
+                        print(pump_label)
+                        pump_id_row = cursor.execute("SELECT pump_id FROM pump WHERE pump_label = ?", (pump_label,)).fetchone()
+                        pump_id = pump_id_row[0]
+                        print(pump_id)
+                        shift_id_row = cursor.execute("Select shift_id FROM shift ORDER BY shift_id DESC LIMIT 1").fetchone()
+                        shift_id = shift_id_row[0]
+                        print(shift_id)
+                        cursor.execute('''
+                                       INSERT INTO transactions(shift_id, pump_id, volume, price)
+                                       Values(?,?,?,?)
+                                       ''',(shift_id, pump_id, volume_value, price_value))
+                        conn.commit()
+                        conn.close()
                     
                 # You can now use volume_value and price_value as needed
-            conn = sqlite3.connect('Databases/inventory_db.db')
-            cursor = conn.cursor()
-            
-            messagebox.showinfo("Transaction Confirmation", "Transaction Recorded 😊")  
             self.clear()
-    
-    #Method to remove focus when a textbox is focused on
-    def remove_focus(self, event):
-        widget = event.widget
-    # Only remove focus if click is NOT on an Entry
-        if not isinstance(widget, ttk.Entry):
-            self.dummy_focus.focus_set()
     
     # Method to clear all textboxes
     def clear(self):
@@ -927,6 +936,13 @@ class DefaultPage(tk.Frame):
         if self.userlogin:
             self.last_logout_label.config(text="")
             self.after(1000, self.updateclock)  
+    
+    #Method to remove focus when a textbox is focused on
+    def remove_focus(self, event):
+        widget = event.widget
+        if not isinstance(widget, ttk.Entry):
+            self.dummy_focus.focus_set()
+ 
                 
 class DeliveryPage(tk.Frame):
     def __init__(self, parent):
