@@ -873,31 +873,49 @@ class DefaultPage(tk.Frame):
                 self.clear()
                 self.diesel1_volume_textbox.config(state = "normal")
                 self.diesel1_volume_textbox.focus_set()
+                for textbox in self.widget_configs:
+                    if textbox[5] != "diesel1_volume_textbox":
+                        getattr(self, textbox[5]).config(state = "disabled")
             case 2:
                 print("Diesel 2 clicked")
                 self.clear()
                 self.diesel2_volume_textbox.config(state = "normal")
                 self.diesel2_volume_textbox.focus_set()
+                for textbox in self.widget_configs:
+                    if textbox[5] != "diesel2_volume_textbox":
+                        getattr(self, textbox[5]).config(state = "disabled")
             case 3:
                 print("Premium 1 clicked")
                 self.clear()
                 self.premium1_volume_textbox.config(state = "normal")
                 self.premium1_volume_textbox.focus_set()
+                for textbox in self.widget_configs:
+                    if textbox[5] != "premium1_volume_textbox":
+                        getattr(self, textbox[5]).config(state = "disabled")
             case 4:
                 print("Premium 2 clicked")
                 self.clear()
                 self.premium2_volume_textbox.config(state = "normal")
                 self.premium2_volume_textbox.focus_set()
+                for textbox in self.widget_configs:
+                    if textbox[5] != "premium2_volume_textbox":
+                        getattr(self, textbox[5]).config(state = "disabled")
             case 5:
                 print("Premium 3 clicked")
                 self.clear()
                 self.premium3_volume_textbox.config(state = "normal")
                 self.premium3_volume_textbox.focus_set()
+                for textbox in self.widget_configs:
+                    if textbox[5] != "premium3_volume_textbox":
+                        getattr(self, textbox[5]).config(state = "disabled")
             case 6:
                 print("Unleaded clicked")  
                 self.clear()
                 self.unleaded_volume_textbox.config(state = "normal")
                 self.unleaded_volume_textbox.focus_set()
+                for textbox in self.widget_configs:
+                    if textbox[5] != "unleaded_volume_textbox":
+                        getattr(self, textbox[5]).config(state = "disabled")
      
     #Bottom right corner clock and date label   
     def updateclock(self):
