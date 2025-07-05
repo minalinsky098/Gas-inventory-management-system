@@ -442,6 +442,8 @@ class HomePage(tk.Frame):
         shadow = tk.Frame(self, bg="#b5b7bb", bd=0)
         shadow.place(in_=self.main_content, relx=0, rely=0, x=-4, y=-4, relwidth=1, relheight=1, width=8, height=8)
         self.main_content.lift() 
+        
+        self.show_content(DefaultPage, userlogin = False)
 
     # Admin navigation bar method
     def navbar(self, parent_frame):
@@ -551,28 +553,17 @@ class DefaultPage(tk.Frame):
     def __init__(self, parent, userlogin = False, user_id = None):
         super().__init__(parent, bg='#91C4EE')
         
-        diesel1_icon = ImageTk.PhotoImage(Image.open("images/diesel_1.png").resize((48, 48)))
-        diesel2_icon = ImageTk.PhotoImage(Image.open("images/diesel_2.png").resize((48, 48)))
-        premium1_icon = ImageTk.PhotoImage(Image.open("images/premium_1.png").resize((48, 48)))
-        premium2_icon = ImageTk.PhotoImage(Image.open("images/premium_2.png").resize((48, 48)))
-        premium3_icon = ImageTk.PhotoImage(Image.open("images/premium_3.png").resize((48, 48)))
-        unleaded_icon = ImageTk.PhotoImage(Image.open("images/unleaded.png").resize((48, 48)))
+        self.diesel1_icon = ImageTk.PhotoImage(Image.open("images/diesel_1.png").resize((48, 48)))
+        self.diesel2_icon = ImageTk.PhotoImage(Image.open("images/diesel_2.png").resize((48, 48)))
+        self.premium1_icon = ImageTk.PhotoImage(Image.open("images/premium_1.png").resize((48, 48)))
+        self.premium2_icon = ImageTk.PhotoImage(Image.open("images/premium_2.png").resize((48, 48)))
+        self.premium3_icon = ImageTk.PhotoImage(Image.open("images/premium_3.png").resize((48, 48)))
+        self.unleaded_icon = ImageTk.PhotoImage(Image.open("images/unleaded.png").resize((48, 48)))
         
         self.userlogin = userlogin
         self.user_id = user_id
-        grids = ("top_left","top_middle","top_right",
-                 "middle_left","middle_middle","middle_right"
-                 )
         #TO BE REFACTORED BUTTON AND TEXTBOX NAMES
-        pump_widgets = ("diesel1_button", "diesel2_button", "premium1_button", 
-                            "premium2_button", "premium3_button", "unleaded_button",
-                            "diesel1_volume_textbox","diesel2_volume_textbox","premium1_volume_textbox",
-                            "premium2_volume_textbox","premium3_volume_textbox","unleaded_volume_textbox")
-        pump_textbox = ("diesel1_volume_textbox","diesel2_volume_textbox","premium1_volume_textbox",
-                            "premium2_volume_textbox","premium3_volume_textbox","unleaded_volume_textbox",
-                            "diesel1_price_textbox","diesel2_price_textbox","premium1_price_textbox",
-                            "premium2_price_textbox","premium3_price_textbox","unleaded_price_textbox")
-        pump_texts = ("Diesel 1", "Diesel 2", "Premium 1", "Premium 2", "Premium 3", "Unleaded")
+        
         for r in range(3):
             self.grid_rowconfigure(r, weight=1, minsize=100)
             for c in range(3):
@@ -582,233 +573,46 @@ class DefaultPage(tk.Frame):
         top_left = tk.Frame(self, bg="#91C4EE", bd = 2, relief= "solid",  width=50)
         top_left.grid(row = 0, column = 0, sticky="nsew", padx=10, pady=10)
         top_left.grid_propagate(False)
-        
-        """
-        for button, gridposition, pump_text in pump_widgets, grids, pump_texts:
-            getattr(self, button) = tk.Button
-            (gridposition, 
-            text = pump_text, 
-             compound = "left",
-             )
-        """
-        self.diesel1_button = tk.Button(
-                    top_left,
-                    text="Diesel 1",
-                    image= diesel1_icon,
-                    compound='left',
-                    bg="#70818c", 
-                    fg='white',
-                    font=("Segoe UI", 10, "bold"),
-                    bd=4,
-                    padx=10,
-                    pady=5,
-                    relief='raised',
-                    command=lambda: self.Onclick(1),
-                    cursor="hand2",
-                    activebackground="#4f5a62",
-                    state = "disabled",
-                    width = 150,
-                    height = 30 
-        )
-        self.diesel1_button.pack(anchor='center', padx=10, pady=5)
-        self.diesel1_volume_label = tk.Label(top_left, text= "Diesel 1 Volume:",font=("Comic Sans MS", 14), bg = "#91C4EE")
-        self.diesel1_volume_label.pack(anchor = 'center', padx = 10, pady = 5)
-        self.diesel1_volume_textbox = ttk.Entry(
-            top_left, 
-            width=20, 
-            font=("Comic Sans MS", 12)
-        )
-        self.diesel1_volume_textbox.pack(anchor='center', padx= 10, pady= 5)
-        self.diesel1_volume_textbox.bind('<KeyRelease>', lambda e: self.update_price(1))
-        self.diesel1_price_label = tk.Label(top_left, text= "Price:",font=("Comic Sans MS", 14), bg = "#91C4EE")
-        self.diesel1_price_label.pack(anchor = 'center', padx = 10, pady = 5)
-        self.diesel1_price_textbox = ttk.Entry(
-            top_left, 
-            width=20, 
-            font=("Comic Sans MS", 12),
-            state= "disabled"
-        )
-        self.diesel1_price_textbox.pack(anchor='center', padx= 10, pady= 5)
 
         # Container frame on top middle square
         top_middle = tk.Frame(self, bg="#91C4EE", bd = 2, relief = "solid", width=50)
         top_middle.grid(row = 0, column = 1, sticky="nsew", padx=10, pady=10)
         top_middle.grid_propagate(False)
-        self.diesel2_button = tk.Button(
-                    top_middle,
-                    text="Diesel 2",
-                    image= diesel2_icon,
-                    compound='left',
-                    bg="#70818c", 
-                    fg='white',
-                    font=("Segoe UI", 10, "bold"),
-                    bd=4,
-                    padx=10,
-                    pady=5,
-                    relief='raised',
-                    command=lambda: self.Onclick(2),
-                    cursor="hand2",
-                    activebackground="#4f5a62",
-                    width = 150,
-                    height = 30 
-        )
-        self.diesel2_button.pack(anchor='center', padx=10, pady=5)
-        self.diesel2_volume_label = tk.Label(top_middle, text= "Diesel 2 Volume:",font=("Comic Sans MS", 14), bg = "#91C4EE")
-        self.diesel2_volume_label.pack(anchor='center', padx= 10, pady= 5)
-        self.diesel2_volume_textbox = ttk.Entry(
-            top_middle, 
-            width=20, 
-            font=("Comic Sans MS", 12)
-        )
-        self.diesel2_volume_textbox.pack(anchor='center', padx= 10, pady= 5)
-        self.diesel2_volume_textbox.bind('<KeyRelease>', lambda e: self.update_price(2))
-        self.diesel2_price_label = tk.Label(top_middle, text= "Price:",font=("Comic Sans MS", 14), bg = "#91C4EE")
-        self.diesel2_price_label.pack(anchor = 'center', padx = 10, pady = 5)
-        self.diesel2_price_textbox = ttk.Entry(
-            top_middle, 
-            width=20, 
-            font=("Comic Sans MS", 12),
-            state= "disabled"
-        )
-        self.diesel2_price_textbox.pack(anchor='center', padx= 10, pady= 5)
 
         # Container frame on top right square
         top_right = tk.Frame(self, bg="#91C4EE",  bd = 2, relief = "solid",width=50)
         top_right.grid(row = 0, column = 2, sticky="nsew", padx=10, pady=10)
         top_right.grid_propagate(False)
-        self.premium1_button = tk.Button(
-                    top_right,
-                    text="Premium 1",
-                    image= premium1_icon,
-                    compound='left',
-                    bg="#70818c", 
-                    fg='white',
-                    font=("Segoe UI", 10, "bold"),
-                    bd=4,
-                    padx=10,
-                    pady=5,
-                    relief='raised',
-                    command=lambda: self.Onclick(3),
-                    cursor="hand2",
-                    activebackground="#4f5a62",
-                    width = 150,
-                    height = 30 
-        )
-        self.premium1_button.pack(anchor='center', padx=10, pady=5)
-        self.premium1_volume_label = tk.Label(top_right, text= "Premium 1 Volume:",font=("Comic Sans MS", 14), bg = "#91C4EE")
-        self.premium1_volume_label.pack(anchor='center', padx= 10, pady= 5)
-        self.premium1_volume_textbox = ttk.Entry(
-            top_right, 
-            width=20, 
-            font=("Comic Sans MS", 12)
-        )
-        self.premium1_volume_textbox.pack(anchor='center', padx= 10, pady= 5)
-        self.premium1_volume_textbox.bind('<KeyRelease>', lambda e: self.update_price(3))
-        self.premium1_price_label = tk.Label(top_right, text= "Price:",font=("Comic Sans MS", 14), bg = "#91C4EE")
-        self.premium1_price_label.pack(anchor = 'center', padx = 10, pady = 5)
-        self.premium1_price_textbox = ttk.Entry(
-            top_right, 
-            width=20, 
-            font=("Comic Sans MS", 12),
-            state= "disabled"
-        )
-        self.premium1_price_textbox.pack(anchor='center', padx= 10, pady= 5)
         
         # Container frame on middle left square
         middle_left = tk.Frame(self, bg="#91C4EE" , bd = 2 , relief="solid",  width=50)
         middle_left.grid(row = 1, column = 0, sticky="nsew", padx=10, pady=10)
         middle_left.grid_propagate(False)
-        
-        self.premium2_button = tk.Button(
-                    middle_left,
-                    text="Premium 2",
-                    image= premium2_icon,
-                    compound='left',
-                    bg="#70818c", 
-                    fg='white',
-                    font=("Segoe UI", 10, "bold"),
-                    bd=4,
-                    padx=10,
-                    pady=5,
-                    relief='raised',
-                    command=lambda: self.Onclick(4),
-                    cursor="hand2",
-                    activebackground="#4f5a62",
-                    width = 150,
-                    height = 30 
-        )
-        self.premium2_button.pack(anchor='center', padx=10, pady=5)
-        self.premium2_volume_label = tk.Label(middle_left, text= "Premium 2 Volume:",font=("Comic Sans MS", 14), bg = "#91C4EE")
-        self.premium2_volume_label.pack(anchor = 'center', padx = 10, pady = 5)
-        self.premium2_volume_textbox = ttk.Entry(
-            middle_left, 
-            width=20, 
-            font=("Comic Sans MS", 12)
-        )
-        self.premium2_volume_textbox.pack(anchor='center', padx= 10, pady= 5)
-        self.premium2_volume_textbox.bind('<KeyRelease>', lambda e: self.update_price(4))
-        self.premium2_price_label = tk.Label(middle_left, text= "Price:",font=("Comic Sans MS", 14), bg = "#91C4EE")
-        self.premium2_price_label.pack(anchor = 'center', padx = 10, pady = 5)
-        self.premium2_price_textbox = ttk.Entry(
-            middle_left, 
-            width=20, 
-            font=("Comic Sans MS", 12),
-            state= "disabled"
-        )
-        self.premium2_price_textbox.pack(anchor='center', padx= 10, pady= 5)
 
         # Container frame on middle middle square
         middle_middle = tk.Frame(self, bg="#91C4EE" , bd = 2 , relief="solid",  width=50)
         middle_middle.grid(row = 1, column = 1, sticky="nsew", padx=10, pady=10)
         middle_middle.grid_propagate(False)
-        
-        self.premium3_button = tk.Button(
-                    middle_middle,
-                    text="Premium 3",
-                    image= premium3_icon,
-                    compound='left',
-                    bg="#70818c", 
-                    fg='white',
-                    font=("Segoe UI", 10, "bold"),
-                    bd=4,
-                    padx=10,
-                    pady=5,
-                    relief='raised',
-                    command=lambda: self.Onclick(5),
-                    cursor="hand2",
-                    activebackground="#4f5a62",
-                    width = 150,
-                    height = 30 
-        )
-        self.premium3_button.pack(anchor='center', padx=10, pady=5)
-        self.premium3_volume_label = tk.Label(middle_middle, text= "Premium 3 Volume:",font=("Comic Sans MS", 14), bg = "#91C4EE")
-        self.premium3_volume_label.pack(anchor = 'center', padx = 10, pady = 5)
-        self.premium3_volume_textbox = ttk.Entry(
-            middle_middle, 
-            width=20, 
-            font=("Comic Sans MS", 12)
-        )
-        self.premium3_volume_textbox.pack(anchor='center', padx= 10, pady= 5)
-        self.premium3_volume_textbox.bind('<KeyRelease>', lambda e: self.update_price(5))
-        self.premium3_price_label = tk.Label(middle_middle, text= "Price:",font=("Comic Sans MS", 14), bg = "#91C4EE")
-        self.premium3_price_label.pack(anchor = 'center', padx = 10, pady = 5)
-        self.premium3_price_textbox = ttk.Entry(
-            middle_middle, 
-            width=20, 
-            font=("Comic Sans MS", 12),
-            state= "disabled"
-        )
-        self.premium3_price_textbox.pack(anchor='center', padx= 10, pady= 5)
 
         # Container frame on middle right square
         middle_right = tk.Frame(self, bg="#91C4EE" , bd = 2 , relief="solid",  width=50)
         middle_right.grid(row = 1, column = 2, sticky="nsew", padx=10, pady=10)
         middle_right.grid_propagate(False)
         
-        self.unleaded_button = tk.Button(
-                    middle_right,
-                    text="Unleaded",
-                    image= unleaded_icon,
+        self.widget_configs = [
+        ("diesel1_button", top_left, self.diesel1_icon, "Diesel 1", 1, "diesel1_volume_textbox", "diesel1_price_textbox", "Diesel 1 Volume:"),
+        ("diesel2_button", top_middle, self.diesel2_icon, "Diesel 2", 2, "diesel2_volume_textbox","diesel2_price_textbox", "Diesel 2 Volume:"),
+        ("premium1_button", top_right, self.premium1_icon, "Premium 1", 3,"premium1_volume_textbox","premium1_price_textbox", "Premium 1 Volume:"),
+        ("premium2_button", middle_left, self.premium2_icon, "Premium 2", 4, "premium2_volume_textbox", "premium2_price_textbox", "Premium 2 Volume:"),
+        ("premium3_button", middle_middle, self.premium3_icon, "Premium 3", 5,"premium3_volume_textbox", "premium3_price_textbox", "Premium 3 Volume:"),
+        ("unleaded_button", middle_right, self.unleaded_icon, "Unleaded", 6,"unleaded_volume_textbox", "unleaded_price_textbox", "Unleaded Volume:"),
+    ]
+        # Create buttons dynamically based on the button_configs
+        for button_name, gridposition, icon, text, cmd_num, volume_textbox, price_texbox, volume_label in self.widget_configs:
+            button = tk.Button(
+                    gridposition,
+                    text=text,
+                    image= icon,
                     compound='left',
                     bg="#70818c", 
                     fg='white',
@@ -817,32 +621,36 @@ class DefaultPage(tk.Frame):
                     padx=10,
                     pady=5,
                     relief='raised',
-                    command=lambda: self.Onclick(6),
+                    command=lambda n = cmd_num: self.Onclick(n),
                     cursor="hand2",
                     activebackground="#4f5a62",
+                    state = "disabled",
                     width = 150,
                     height = 30 
-        )
-        self.unleaded_button.pack(anchor='center', padx=10, pady=5)
-        self.unleaded_volume_label = tk.Label(middle_right, text= "Unleaded Volume:",font=("Comic Sans MS", 14), bg = "#91C4EE")
-        self.unleaded_volume_label.pack(anchor = 'center', padx = 10, pady = 5)
-        self.unleaded_volume_textbox = ttk.Entry(
-            middle_right, 
+            )
+            button.pack(anchor='center', padx=10, pady=5)
+            volume_label = tk.Label(gridposition, text= volume_label ,font=("Comic Sans MS", 14), bg = "#91C4EE")
+            volume_label.pack(anchor = 'center', padx = 10, pady = 5)
+            volumetxbx = ttk.Entry(
+            gridposition, 
             width=20, 
             font=("Comic Sans MS", 12)
-        )
-        self.unleaded_volume_textbox.pack(anchor='center', padx= 10, pady= 5)
-        self.unleaded_volume_textbox.bind('<KeyRelease>', lambda e: self.update_price(6))
-        self.unleaded_price_label = tk.Label(middle_right, text= "Price:",font=("Comic Sans MS", 14), bg = "#91C4EE")
-        self.unleaded_price_label.pack(anchor = 'center', padx = 10, pady = 5)
-        self.unleaded_price_textbox = ttk.Entry(
-            middle_right, 
+            )
+            volumetxbx.pack(anchor='center', padx= 10, pady= 5)
+            price_label =tk.Label(gridposition, text= "Price:",font=("Comic Sans MS", 14), bg = "#91C4EE")
+            price_label.pack(anchor = 'center', padx = 10, pady = 5)
+            price_txbx = ttk.Entry(
+            gridposition, 
             width=20, 
             font=("Comic Sans MS", 12),
             state= "disabled"
-        )
-        self.unleaded_price_textbox.pack(anchor='center', padx= 10, pady= 5)
-        
+            )
+            price_txbx.pack(anchor='center', padx= 10, pady= 5)
+            setattr(self, button_name, button)
+            setattr(self, volume_textbox, volumetxbx)
+            getattr(self, volume_textbox).bind('<KeyRelease>', lambda e, n=cmd_num: self.update_price(n))
+            setattr(self, price_texbox, price_txbx)
+            
         # Container frame on bottom left square
         bottom_left = tk.Frame(self, bg="#91C4EE" , bd = 2 , relief="solid",  width=50)
         bottom_left.grid(row = 2, column = 0, sticky="nsew", padx=10, pady=10)
@@ -906,20 +714,28 @@ class DefaultPage(tk.Frame):
         self.bind_all("<Return>", lambda e: self.submit())
             
         # state of the widgets based if the user has pressed the shift button
-        #BUG NOT HERE
-        if self.userlogin:  
-            for widget_label in pump_widgets:
-                getattr(self, widget_label).config(state = "normal")
-                
-            for label in pump_textbox:
-                getattr(self, label).delete(0,tk.END)
+        
+        if self.userlogin: 
+            # enabling the buttons when the user has pressed start shift
+            for widget in self.widget_configs:
+                getattr(self, widget[0]).config(state = "normal")
+                getattr(self, widget[5]).config(state = "normal")
+            
+            #Clearing the textboxes when the user has pressed start shift    
+            for textbox in self.widget_configs:
+                getattr(self, textbox[5]).delete(0,tk.END)
+                getattr(self, textbox[6]).delete(0,tk.END)
         
         else:
-            for widget_label in pump_widgets:
-                getattr(self, widget_label).config(state = "disabled")
-                
-            for label in pump_textbox:
-                getattr(self, label).delete(0,tk.END)
+            # disabling the buttons when the user has pressed ennd shift
+            for widget in self.widget_configs:
+                getattr(self, widget[0]).config(state = "disabled")
+                getattr(self, widget[5]).config(state = "disabled")
+            
+            #Clearing the textboxes when the user has pressed end shift    
+            for textbox in self.widget_configs:
+                getattr(self, textbox[5]).delete(0,tk.END)
+                getattr(self, textbox[6]).delete(0,tk.END)
                 
     def submit(self):
         answer = messagebox.askokcancel("Transaction Confirmation", 
