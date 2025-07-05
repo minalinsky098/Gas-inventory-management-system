@@ -56,7 +56,8 @@ def setup_database():
             pump_id INTEGER NOT NULL,
             Volume REAL NOT NULL,
             Date DATETIME DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (shift_id) REFERENCES shift(shift_id)
+            FOREIGN KEY (shift_id) REFERENCES shift(shift_id),
+            FOREIGN KEY (pump_id) REFERENCES pump(pump_id)
         )
     ''')
     
@@ -581,7 +582,6 @@ class DefaultPage(tk.Frame):
         
         self.dummy_focus = tk.Frame(self)
         self.dummy_focus.place(x=0, y=0, width=1, height=1)
-        #TO BE REFACTORED BUTTON AND TEXTBOX NAMES
         
         for r in range(3):
             self.grid_rowconfigure(r, weight=1, minsize=100)
@@ -654,7 +654,8 @@ class DefaultPage(tk.Frame):
             volumetxbx = ttk.Entry(
             gridposition, 
             width=20, 
-            font=("Comic Sans MS", 12)
+            font=("Comic Sans MS", 12),
+            state = "disabled"
             )
             volumetxbx.bind("<Return>", lambda e: self.submit())
             volumetxbx.pack(anchor='center', padx= 10, pady= 5)
@@ -686,7 +687,7 @@ class DefaultPage(tk.Frame):
                     padx=10,
                     pady=5,
                     relief='raised',
-                    command=lambda: self.Onclick(6),
+                    command=lambda: self.clear(),
                     cursor="hand2",
                     activebackground="#F10A0A",
                     width = 15,
@@ -730,12 +731,12 @@ class DefaultPage(tk.Frame):
         self.last_logout_label.pack(side='bottom', anchor='e', padx=10, pady=(0,2), fill='x')
         self.updateclock()  
         self.bind_all("<Button-1>", self.remove_focus)
+        
         # state of the widgets based if the user has pressed the shift button
         if self.userlogin: 
             # enabling the buttons when the user has pressed start shift
             for widget in self.widget_configs:
                 getattr(self, widget[0]).config(state = "normal")
-                getattr(self, widget[5]).config(state = "normal")
             
             #Clearing the textboxes when the user has pressed start shift    
             for textbox in self.widget_configs:
@@ -752,17 +753,8 @@ class DefaultPage(tk.Frame):
             for textbox in self.widget_configs:
                 getattr(self, textbox[5]).delete(0,tk.END)
                 getattr(self, textbox[6]).delete(0,tk.END)
-    def remove_focus(self, event):
-        widget = event.widget
-    # Only remove focus if click is NOT on an Entry
-        if not isinstance(widget, ttk.Entry):
-            self.dummy_focus.focus_set()
-            
-    def submit(self):
-        answer = messagebox.askokcancel("Transaction Confirmation", 
-                            "Are you sure all the information entered is correct")   
-        if answer:
-            messagebox.showinfo("Transaction Confirmation", "Transaction Recorded 😊")         
+    
+    #This method calculates the price based on the volume entered in the corresponding textbox
     def update_price(self, number):
         match number:
             case 1:
@@ -830,29 +822,78 @@ class DefaultPage(tk.Frame):
                 self.unleaded_price_textbox.config(state="normal")
                 self.unleaded_price_textbox.delete(0, tk.END)
                 self.unleaded_price_textbox.insert(0, price_str)
-                self.unleaded_price_textbox.config(state="disabled")        
+                self.unleaded_price_textbox.config(state="disabled")    
+    
+    # Method to handle transaction submissions       
+    def submit(self):
+        answer = messagebox.askokcancel("Transaction Confirmation", 
+                            "Are you sure all the information entered is correct") 
+        if answer:
+            for config in self.widget_configs:
+                volume_entry = getattr(self, config[5])
+                price_entry = getattr(self, config[6])
+                if str(volume_entry['state']) == 'normal':
+                    volume_value = volume_entry.get()
+                    price_value = price_entry.get()
+                    print(f"Enabled: {config[3]}, Volume: {volume_value}, Price: {price_value}")
+                    
+                # You can now use volume_value and price_value as needed
+            conn = sqlite3.connect('Databases/inventory_db.db')
+            cursor = conn.cursor()
             
+            messagebox.showinfo("Transaction Confirmation", "Transaction Recorded 😊")  
+            self.clear()
+    
+    #Method to remove focus when a textbox is focused on
+    def remove_focus(self, event):
+        widget = event.widget
+    # Only remove focus if click is NOT on an Entry
+        if not isinstance(widget, ttk.Entry):
+            self.dummy_focus.focus_set()
+    
+    # Method to clear all textboxes
+    def clear(self):
+        for textbox in self.widget_configs: 
+            getattr(self, textbox[5]).delete(0,tk.END)
+            getattr(self, textbox[6]).config(state="normal")
+            getattr(self, textbox[6]).delete(0,tk.END) 
+            getattr(self, textbox[6]).config(state="disabled")                 
+    
+    #Method to handle button clicks TBR      
     def Onclick(self, button_number):
         match button_number:
             case 1:
                 print("Diesel 1 clicked")
+                self.clear()
+                self.diesel1_volume_textbox.config(state = "normal")
                 self.diesel1_volume_textbox.focus_set()
             case 2:
                 print("Diesel 2 clicked")
+                self.clear()
+                self.diesel2_volume_textbox.config(state = "normal")
                 self.diesel2_volume_textbox.focus_set()
             case 3:
                 print("Premium 1 clicked")
+                self.clear()
+                self.premium1_volume_textbox.config(state = "normal")
                 self.premium1_volume_textbox.focus_set()
             case 4:
                 print("Premium 2 clicked")
+                self.clear()
+                self.premium2_volume_textbox.config(state = "normal")
                 self.premium2_volume_textbox.focus_set()
             case 5:
                 print("Premium 3 clicked")
+                self.clear()
+                self.premium3_volume_textbox.config(state = "normal")
                 self.premium3_volume_textbox.focus_set()
             case 6:
                 print("Unleaded clicked")  
+                self.clear()
+                self.unleaded_volume_textbox.config(state = "normal")
                 self.unleaded_volume_textbox.focus_set()
-       
+     
+    #Bottom right corner clock and date label   
     def updateclock(self):
         conn = sqlite3.connect('Databases/inventory_db.db')
         cursor = conn.cursor()
