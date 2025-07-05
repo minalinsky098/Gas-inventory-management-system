@@ -167,10 +167,7 @@ class ProjectFrame(tk.Tk):
     def show_frame(self, name, role = None, user_id = None):
         for frame in self.frames.values():
             frame.place_forget()
-            
-            #if hasattr(frame, 'unbind_enter'):
-            #   frame.unbind_enter()
-            
+                
         if name == "HomePage":
             if "HomePage" in self.frames:
                 self.frames["HomePage"].destroy()
@@ -361,7 +358,6 @@ class LoginPage(tk.Frame):
 
     # Method to handle login button click
     def Onclick(self):
-        self.passwordtextbox.unbind("<Return>")
         username = self.usernametextbox.get()
         password = self.passwordtextbox.get()
         success, user_id= check_login(username, password)
@@ -371,6 +367,7 @@ class LoginPage(tk.Frame):
             else:
                 role = "user"
             messagebox.showinfo(f"Access granted!!",f"Welcome, {username}!")
+            self.unbind_enter()
             self.controller.show_frame("HomePage", role = role, user_id = user_id)  # Example: switch to another frame
         else:
             messagebox.showerror("Access denied", "Invalid username or password.")
