@@ -56,7 +56,7 @@ def setup_database():
             pump_id INTEGER NOT NULL,
             Volume REAL NOT NULL,
             Price REAL NOT NULL,
-            Date TEXT DEFAULT (DATE('now')),
+            Date TEXT DEFAULT (strftime('%m-%d-%Y', 'now')),
             FOREIGN KEY (shift_id) REFERENCES shift(shift_id),
             FOREIGN KEY (pump_id) REFERENCES pump(pump_id)
         )
@@ -528,7 +528,7 @@ class HomePage(tk.Frame):
     def Onclick(self, number):
         def income_report(time_period):
             messagebox.showinfo("Income Report", "Income report generated successfully!")
-            self.show_content(DashboardPage)
+            self.show_content(IncomePage)
         match number:
             case 1:
                 self.toggle_shift()
@@ -540,7 +540,7 @@ class HomePage(tk.Frame):
                 menu.add_command(label="Yearly income", command=lambda: income_report("Yearly"))
                 menu.tk_popup(self.winfo_pointerx(), self.winfo_pointery())
             case 3: 
-                print("Price button clicked")
+                self.show_content(PricePage)
             case 4:
                 self.show_content(DeliveryPage) 
             case 5:
@@ -980,10 +980,10 @@ class TransactionsPage(tk.Frame):
                         rowheight=25,
                         fieldbackground="white")
         
-        columns = ('Pump Label', 'Fuel_type', 'Volume(Liters)', 'Price(Pesos)', 'Date')
+        columns = ('Pump Label', 'Fuel_type', 'Volume(Liters)', 'Price(Pesos)', 'Date(MM/DD/YY)')
         tree = ttk.Treeview(self, columns=columns, show='headings', style= "Custom.Treeview")
         for col in columns:
-            tree.heading(col, text=col)
+            tree.heading(col, text=col, anchor='w')
             tree.column(col, anchor='w', width=100)
         tree.pack(side='left', fill='both', expand=True)
 
@@ -1006,6 +1006,7 @@ class TransactionsPage(tk.Frame):
                        JOIN fuel_type ON pump.fuel_type_id = fuel_type.fuel_type_id
                        ORDER BY transactions.transaction_id''')
         rows = cursor.fetchall()
+        print(rows)
         connect.close()
         for i, values in enumerate(rows):
             tag = 'evenrow' if i % 2 == 0 else 'oddrow'
@@ -1014,12 +1015,53 @@ class TransactionsPage(tk.Frame):
         tree.tag_configure('oddrow', background="#7cacdf")
         style.map('Custom.Treeview', background=[('selected', "#8e8e8e")])
                
+class PricePage(tk.Frame):
+    def __init__(self, parent):
+        super().__init__(parent, bg='#91C4EE', bd=2, relief='solid')
+        
+        # Main container for centering content
+        container = tk.Frame(self, bg='#91C4EE', bd = 5, relief = 'solid')
+        container.pack(fill='both', expand=True)
+        
+        # Left frame (west)
+        Current_Liter_Price = tk.Frame(
+            container, 
+            bg="#ffffff", 
+            width=300, 
+            height=600,
+            bd=2, 
+            relief='solid'
+        )
+        Current_Liter_Price.pack(side='left', fill='y', padx=(50, 50), pady=30)
+        
+        # Center frame
+        EditPriceFrame = tk.Frame(
+            container, 
+            bg="#ffffff", 
+            width=600, 
+            height=600,
+            bd=2, 
+            relief='solid'
+        )
+        EditPriceFrame.pack(side='left', fill='none', padx=20, pady=30)
+        
+        # Right frame (east)
+        Current_100L_Price = tk.Frame(
+            container, 
+            bg="#ffffff", 
+            width=300, 
+            height=600,
+            bd=2, 
+            relief='solid'
+        )
+        Current_100L_Price.pack(side='left', fill='y', padx=(50, 50), pady=30)
+        
 class DeliveryPage(tk.Frame):
     def __init__(self, parent):
         super().__init__(parent, bg='white')
         tk.Label(self, text="Delivery Content").pack()
         
-class DashboardPage(tk.Frame):
+class IncomePage(tk.Frame):
     def __init__(self, parent):
         super().__init__(parent, bg='white')
         tk.Label(self, text="Dashboard Content").pack()
@@ -1029,8 +1071,7 @@ class InventoryPage(tk.Frame):
         super().__init__(parent, bg='white')
         tk.Label(self, text="Inventory Content").pack()
 
-
-# --- Main program ---
+# --- Run program ---
 setup_database()
 projectframe = ProjectFrame()
 projectframe.mainloop()
