@@ -1032,6 +1032,7 @@ class PricePage(tk.Frame):
             bd=2, 
             relief='solid'
         )
+    
         Current_Liter_Price.pack(side='left', fill='y', padx=(50, 50), pady=30)
         
         # Center frame
