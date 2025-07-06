@@ -56,7 +56,7 @@ def setup_database():
             pump_id INTEGER NOT NULL,
             Volume REAL NOT NULL,
             Price REAL NOT NULL,
-            Date TEXT DEFAULT (DATE('now')),
+            Date TEXT DEFAULT (strftime('%m-%d-%Y', 'now')),
             FOREIGN KEY (shift_id) REFERENCES shift(shift_id),
             FOREIGN KEY (pump_id) REFERENCES pump(pump_id)
         )
@@ -528,7 +528,7 @@ class HomePage(tk.Frame):
     def Onclick(self, number):
         def income_report(time_period):
             messagebox.showinfo("Income Report", "Income report generated successfully!")
-            self.show_content(DashboardPage)
+            self.show_content(IncomePage)
         match number:
             case 1:
                 self.toggle_shift()
@@ -540,7 +540,7 @@ class HomePage(tk.Frame):
                 menu.add_command(label="Yearly income", command=lambda: income_report("Yearly"))
                 menu.tk_popup(self.winfo_pointerx(), self.winfo_pointery())
             case 3: 
-                print("Price button clicked")
+                self.show_content(PricePage)
             case 4:
                 self.show_content(DeliveryPage) 
             case 5:
@@ -824,18 +824,17 @@ class DefaultPage(tk.Frame):
     
     # Method to handle transaction submissions       
     def submit(self):
-        answer = messagebox.askokcancel("Transaction Confirmation", 
-                            "Are you sure all the information entered is correct") 
-        if answer:
-            for config in self.widget_configs:
-                volume_entry = getattr(self, config[5])
-                price_entry = getattr(self, config[6])
-                if str(volume_entry['state']) == 'normal':
-                    volume_value = volume_entry.get()
+        for config in self.widget_configs:
+            volume_entry = getattr(self, config[5])
+            price_entry = getattr(self, config[6])
+            if str(volume_entry['state']) == 'normal':
+                print(f"Transaction of: {config[3]}")
+                try:
+                    volume_value = float(getattr(self, config[5]).get())
                     price_value = price_entry.get()
-                    if volume_value == "":
-                        messagebox.showinfo("Input Error", f"Please enter a volume for {config[3]}.")
-                    else:
+                    answer = messagebox.askokcancel("Transaction Confirmation", 
+                            "Are you sure all the information entered is correct") 
+                    if answer:
                         print(f"Enabled: {config[3]}, Volume: {volume_value}, Price: {price_value}")
                         conn = sqlite3.connect('Databases/inventory_db.db')
                         cursor = conn.cursor()
@@ -853,6 +852,11 @@ class DefaultPage(tk.Frame):
                                        ''',(shift_id, pump_id, volume_value, price_value))
                         conn.commit()
                         conn.close()
+                except ValueError: 
+                    print(f"Invalid input in {config[3]}. Please enter numeric values.")
+                    messagebox.showinfo("Input Error", f"Please enter the correct inputs in {config[3]}.")
+            else:
+                continue
                     
                 # You can now use volume_value and price_value as needed
             self.clear()
@@ -959,35 +963,28 @@ class DefaultPage(tk.Frame):
     def remove_focus(self, event):
         widget = event.widget
         if not isinstance(widget, ttk.Entry):
-            self.dummy_focus.focus_set()
- 
-                
-class DeliveryPage(tk.Frame):
-    def __init__(self, parent):
-        super().__init__(parent, bg='white')
-        tk.Label(self, text="Delivery Content").pack()
-        
-class DashboardPage(tk.Frame):
-    def __init__(self, parent):
-        super().__init__(parent, bg='white')
-        tk.Label(self, text="Dashboard Content").pack()
-
-class InventoryPage(tk.Frame):
-    def __init__(self, parent):
-        super().__init__(parent, bg='white')
-        tk.Label(self, text="Inventory Content").pack()
-
+            try:
+                if self.dummy_focus.winfo_exists():
+                    self.dummy_focus.focus_set()
+            except tk.TclError:
+                pass  
+            
 class TransactionsPage(tk.Frame):
     def __init__(self, parent):
         super().__init__(parent, bg='white')
-        # Main content area with a scrollable table
-
         # Example: Scrollable table using ttk.Treeview
-        columns = ('Pump number', 'Fuel_type', 'Volume', 'Price', 'Date')
-        tree = ttk.Treeview(self, columns=columns, show='headings')
+        style = ttk.Style()
+        style.configure("Custom.Treeview",
+                        background="white",
+                        foreground="black",
+                        rowheight=25,
+                        fieldbackground="white")
+        
+        columns = ('Pump Label', 'Fuel_type', 'Volume(Liters)', 'Price(Pesos)', 'Date(MM/DD/YY)')
+        tree = ttk.Treeview(self, columns=columns, show='headings', style= "Custom.Treeview")
         for col in columns:
-            tree.heading(col, text=col)
-            tree.column(col, anchor='center', width=100)
+            tree.heading(col, text=col, anchor='w')
+            tree.column(col, anchor='w', width=100)
         tree.pack(side='left', fill='both', expand=True)
 
         # Add vertical scrollbar
@@ -998,13 +995,83 @@ class TransactionsPage(tk.Frame):
         # Example data
         connect = sqlite3.connect('Databases/inventory_db.db')
         cursor = connect.cursor()
-        cursor.execute('SELECT * FROM transactions')
+        cursor.execute('''SELECT 
+                       pump.pump_label AS "Pump_label", 
+                       fuel_type.fuel_name AS "Fuel_type",
+                       transactions.Volume, 
+                       transactions.Price, 
+                       transactions.Date 
+                       FROM transactions
+                       JOIN pump ON transactions.pump_id = pump.pump_id
+                       JOIN fuel_type ON pump.fuel_type_id = fuel_type.fuel_type_id
+                       ORDER BY transactions.transaction_id''')
         rows = cursor.fetchall()
+        print(rows)
         connect.close()
-        for values in rows:
-            tree.insert('', 'end', values=values)
+        for i, values in enumerate(rows):
+            tag = 'evenrow' if i % 2 == 0 else 'oddrow'
+            tree.insert('', 'end', values=values, tags=(tag,))
+        tree.tag_configure('evenrow', background="#86ea86")
+        tree.tag_configure('oddrow', background="#7cacdf")
+        style.map('Custom.Treeview', background=[('selected', "#8e8e8e")])
+               
+class PricePage(tk.Frame):
+    def __init__(self, parent):
+        super().__init__(parent, bg='#91C4EE', bd=2, relief='solid')
+        
+        # Main container for centering content
+        container = tk.Frame(self, bg='#91C4EE', bd = 5, relief = 'solid')
+        container.pack(fill='both', expand=True)
+        
+        # Left frame (west)
+        Current_Liter_Price = tk.Frame(
+            container, 
+            bg="#ffffff", 
+            width=300, 
+            height=600,
+            bd=2, 
+            relief='solid'
+        )
+        Current_Liter_Price.pack(side='left', fill='y', padx=(50, 50), pady=30)
+        
+        # Center frame
+        EditPriceFrame = tk.Frame(
+            container, 
+            bg="#ffffff", 
+            width=600, 
+            height=600,
+            bd=2, 
+            relief='solid'
+        )
+        EditPriceFrame.pack(side='left', fill='none', padx=20, pady=30)
+        
+        # Right frame (east)
+        Current_100L_Price = tk.Frame(
+            container, 
+            bg="#ffffff", 
+            width=300, 
+            height=600,
+            bd=2, 
+            relief='solid'
+        )
+        Current_100L_Price.pack(side='left', fill='y', padx=(50, 50), pady=30)
+        
+class DeliveryPage(tk.Frame):
+    def __init__(self, parent):
+        super().__init__(parent, bg='white')
+        tk.Label(self, text="Delivery Content").pack()
+        
+class IncomePage(tk.Frame):
+    def __init__(self, parent):
+        super().__init__(parent, bg='white')
+        tk.Label(self, text="Dashboard Content").pack()
 
-# --- Main program ---
+class InventoryPage(tk.Frame):
+    def __init__(self, parent):
+        super().__init__(parent, bg='white')
+        tk.Label(self, text="Inventory Content").pack()
+
+# --- Run program ---
 setup_database()
 projectframe = ProjectFrame()
 projectframe.mainloop()
