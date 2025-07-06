@@ -824,18 +824,17 @@ class DefaultPage(tk.Frame):
     
     # Method to handle transaction submissions       
     def submit(self):
-        answer = messagebox.askokcancel("Transaction Confirmation", 
-                            "Are you sure all the information entered is correct") 
-        if answer:
-            for config in self.widget_configs:
-                volume_entry = getattr(self, config[5])
-                price_entry = getattr(self, config[6])
-                if str(volume_entry['state']) == 'normal':
-                    volume_value = volume_entry.get()
+        for config in self.widget_configs:
+            volume_entry = getattr(self, config[5])
+            price_entry = getattr(self, config[6])
+            if str(volume_entry['state']) == 'normal':
+                print(f"Transaction of: {config[3]}")
+                try:
+                    volume_value = float(getattr(self, config[5]).get())
                     price_value = price_entry.get()
-                    if volume_value == "":
-                        messagebox.showinfo("Input Error", f"Please enter a volume for {config[3]}.")
-                    else:
+                    answer = messagebox.askokcancel("Transaction Confirmation", 
+                            "Are you sure all the information entered is correct") 
+                    if answer:
                         print(f"Enabled: {config[3]}, Volume: {volume_value}, Price: {price_value}")
                         conn = sqlite3.connect('Databases/inventory_db.db')
                         cursor = conn.cursor()
@@ -853,6 +852,11 @@ class DefaultPage(tk.Frame):
                                        ''',(shift_id, pump_id, volume_value, price_value))
                         conn.commit()
                         conn.close()
+                except ValueError: 
+                    print(f"Invalid input in {config[3]}. Please enter numeric values.")
+                    messagebox.showinfo("Input Error", f"Please enter the correct inputs in {config[3]}.")
+            else:
+                continue
                     
                 # You can now use volume_value and price_value as needed
             self.clear()
@@ -963,23 +967,8 @@ class DefaultPage(tk.Frame):
                 if self.dummy_focus.winfo_exists():
                     self.dummy_focus.focus_set()
             except tk.TclError:
-                pass  # Widget no longer exists, ignore 
-                
-class DeliveryPage(tk.Frame):
-    def __init__(self, parent):
-        super().__init__(parent, bg='white')
-        tk.Label(self, text="Delivery Content").pack()
-        
-class DashboardPage(tk.Frame):
-    def __init__(self, parent):
-        super().__init__(parent, bg='white')
-        tk.Label(self, text="Dashboard Content").pack()
-
-class InventoryPage(tk.Frame):
-    def __init__(self, parent):
-        super().__init__(parent, bg='white')
-        tk.Label(self, text="Inventory Content").pack()
-
+                pass  
+            
 class TransactionsPage(tk.Frame):
     def __init__(self, parent):
         super().__init__(parent, bg='white')
@@ -991,11 +980,11 @@ class TransactionsPage(tk.Frame):
                         rowheight=25,
                         fieldbackground="white")
         
-        columns = ('Pump number', 'Fuel_type', 'Volume(Liters)', 'Price(Pesos)', 'Date')
+        columns = ('Pump Label', 'Fuel_type', 'Volume(Liters)', 'Price(Pesos)', 'Date')
         tree = ttk.Treeview(self, columns=columns, show='headings', style= "Custom.Treeview")
         for col in columns:
             tree.heading(col, text=col)
-            tree.column(col, anchor='center', width=100)
+            tree.column(col, anchor='w', width=100)
         tree.pack(side='left', fill='both', expand=True)
 
         # Add vertical scrollbar
@@ -1007,7 +996,7 @@ class TransactionsPage(tk.Frame):
         connect = sqlite3.connect('Databases/inventory_db.db')
         cursor = connect.cursor()
         cursor.execute('''SELECT 
-                       pump.pump_id AS "Pump_number", 
+                       pump.pump_label AS "Pump_label", 
                        fuel_type.fuel_name AS "Fuel_type",
                        transactions.Volume, 
                        transactions.Price, 
@@ -1024,6 +1013,22 @@ class TransactionsPage(tk.Frame):
         tree.tag_configure('evenrow', background="#86ea86")
         tree.tag_configure('oddrow', background="#7cacdf")
         style.map('Custom.Treeview', background=[('selected', "#8e8e8e")])
+               
+class DeliveryPage(tk.Frame):
+    def __init__(self, parent):
+        super().__init__(parent, bg='white')
+        tk.Label(self, text="Delivery Content").pack()
+        
+class DashboardPage(tk.Frame):
+    def __init__(self, parent):
+        super().__init__(parent, bg='white')
+        tk.Label(self, text="Dashboard Content").pack()
+
+class InventoryPage(tk.Frame):
+    def __init__(self, parent):
+        super().__init__(parent, bg='white')
+        tk.Label(self, text="Inventory Content").pack()
+
 
 # --- Main program ---
 setup_database()
