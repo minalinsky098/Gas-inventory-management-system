@@ -16,29 +16,37 @@ if %errorlevel% neq 0 (
     set py_cmd=python3
 ) else (
     set py_cmd=python
+    echo Python is already installed.
 )
 
 :: Check for pip
 echo Checking for pip...
 %py_cmd% -m pip --version >nul 2>&1
 if %errorlevel% neq 0 (
-    echo Error: pip not found. Attempting to install pip...
+    echo pip not found. Attempting to install pip...
     %py_cmd% -m ensurepip --default-pip >nul 2>&1
     if %errorlevel% neq 0 (
         echo Failed to install pip. Please install pip manually.
         timeout /t 5
         exit /b 1
     )
+) else (
+    echo pip is already installed.
 )
 
 :: Install Willow library
-echo Installing Willow library...
-%py_cmd% -m pip install willow --quiet
-
+echo Checking for Willow library...
+%py_cmd% -m pip show willow >nul 2>&1
 if %errorlevel% equ 0 (
-    echo Successfully installed Willow!
+    echo Willow library is already installed.
 ) else (
-    echo Failed to install Willow. Check permissions and internet connection.
+    echo Installing Willow library...
+    %py_cmd% -m pip install willow 
+    if %errorlevel% equ 0 (
+        echo Successfully installed Willow!
+    ) else (
+        echo Failed to install Willow. Check permissions and internet connection.
+    )
 )
 
 endlocal
