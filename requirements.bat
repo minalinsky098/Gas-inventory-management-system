@@ -18,6 +18,7 @@ if %errorlevel% neq 0 (
     set py_cmd=python
     echo Python is already installed.
 )
+%py_cmd% --version
 
 :: Check for pip
 echo Checking for pip...
@@ -32,6 +33,7 @@ if %errorlevel% neq 0 (
     )
 ) else (
     echo pip is already installed.
+    %py_cmd% -m pip --version
 )
 
 :: Install Willow library
@@ -50,4 +52,4 @@ if %errorlevel% equ 0 (
 )
 
 endlocal
-timeout /t 3
+timeout /t 20
