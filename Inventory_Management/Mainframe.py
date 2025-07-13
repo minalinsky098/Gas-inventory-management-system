@@ -1,11 +1,13 @@
 import tkinter as tk
 from PIL import Image, ImageTk 
 from tkinter import messagebox, simpledialog, ttk
+
 import datetime
 import sqlite3
 import hashlib
+from typing import Dict, Union, cast, Type, TypeVar, Any
 
-def hash_password(password):
+def hash_password(password: str):
     return hashlib.sha256(password.encode()).hexdigest()
 
 def setup_database():
@@ -119,7 +121,7 @@ def setup_database():
     conn.commit()
     conn.close()
 
-def check_login(username, password):
+def check_login(username: str, password: str):
     conn = sqlite3.connect('Databases/inventory_db.db')
     cursor = conn.cursor()
     cursor.execute('SELECT user_id, password_hash FROM users WHERE username=?', (username,))
@@ -155,7 +157,7 @@ class ProjectFrame(tk.Tk):
         self.protocol("WM_DELETE_WINDOW", self.on_closing)  # Handle close event
         self.minsize(1200, 600)
         self.state('zoomed')  # Start maximized
-        self.frames = {}
+        self.frames: Dict[str, Union[LoginPage, HomePage]] = {}
         self.setup_frames()
         self.show_frame("LoginPage")
 
@@ -165,7 +167,7 @@ class ProjectFrame(tk.Tk):
         for frame in self.frames.values():
             frame.place(relwidth=1, relheight=1)
  
-    def show_frame(self, name, role = None, user_id = None):
+    def show_frame(self, name : str, role: str | None = None, user_id: int | None = None):
         for frame in self.frames.values():
             frame.place_forget()
                 
@@ -176,23 +178,25 @@ class ProjectFrame(tk.Tk):
         self.frames[name].place(relwidth=1, relheight=1)
         self.homepage = self.frames.get("HomePage")
         if name == "LoginPage":
-            self.frames[name].bind_enter()
+            login_frame = cast(LoginPage, self.frames[name])
+            login_frame.bind_enter()
         
     # Error message when shift is active
     def on_closing(self):
         if self.shift_started:
-            messagebox.showwarning("Action Blocked", "You cannot exit the program while logged in. Please logout first.")
+            messagebox.showwarning("Action Blocked", "You cannot exit the program while logged in. Please logout first.") # type: ignore
             self.homepage.show_content(DefaultPage, userlogin = True) # type: ignore
         else:
             self.destroy()
 
+T = TypeVar('T', bound=tk.Frame)
 class LoginPage(tk.Frame):
-    def __init__(self, parent, controller):
+    def __init__(self, parent: tk.Tk, controller: ProjectFrame):
         super().__init__(parent)
         self.controller = controller
         
         # Modern color scheme
-        self.login_icon = ImageTk.PhotoImage(Image.open("images/login.png").resize((108, 108)))
+        self.login_icon = ImageTk.PhotoImage(Image.open("images/login.png").resize((108, 108))) # type:ignore
         self.bg_color = '#2c3e50'  # Dark blue
         self.primary_color = '#3498db'  # Bright blue
         self.secondary_color = '#2980b9'  # Darker blue
@@ -367,26 +371,26 @@ class LoginPage(tk.Frame):
                 role = "admin"
             else:
                 role = "user"
-            messagebox.showinfo(f"Access granted!!",f"Welcome, {username}!")
+            messagebox.showinfo(f"Access granted!!",f"Welcome, {username}!") #type: ignore
             self.unbind_enter()
-            self.controller.show_frame("HomePage", role = role, user_id = user_id)  # Example: switch to another frame
+            self.controller.show_frame("HomePage", role = role, user_id = user_id)  
         else:
-            messagebox.showerror("Access denied", "Invalid username or password.")
+            messagebox.showerror("Access denied", "Invalid username or password.") #type: ignore
         self.usernametextbox.delete(0, tk.END)
         self.passwordtextbox.delete(0, tk.END)
         self.usernametextbox.focus_set()
 
 class HomePage(tk.Frame):
-    def __init__(self, parent, controller, role, user_id):
+    def __init__(self, parent: tk.Tk, controller: ProjectFrame, role: str | None, user_id: int |None):
         
-        self.shift_icon = ImageTk.PhotoImage(Image.open("images/shift.png").resize((24, 24)))
-        self.income_icon = ImageTk.PhotoImage(Image.open("images/income.png").resize((24, 24)))
-        self.price_icon = ImageTk.PhotoImage(Image.open("images/price.png").resize((24, 24)))
-        self.delivery_icon = ImageTk.PhotoImage(Image.open("images/delivery.png").resize((24, 24)))
-        self.inventory_icon = ImageTk.PhotoImage(Image.open("images/inventory.png").resize((24, 24)))
-        self.transactions_icon = ImageTk.PhotoImage(Image.open("images/transaction.png").resize((24, 24)))
-        self.logout_icon = ImageTk.PhotoImage(Image.open("images/logout.png").resize((24, 24)))
-        self.login_icon = ImageTk.PhotoImage(Image.open("images/login.png").resize((36, 36)))
+        self.shift_icon = ImageTk.PhotoImage(Image.open("images/shift.png").resize((24, 24)))#type: ignore
+        self.income_icon = ImageTk.PhotoImage(Image.open("images/income.png").resize((24, 24)))#type: ignore
+        self.price_icon = ImageTk.PhotoImage(Image.open("images/price.png").resize((24, 24)))#type: ignore
+        self.delivery_icon = ImageTk.PhotoImage(Image.open("images/delivery.png").resize((24, 24)))#type: ignore
+        self.inventory_icon = ImageTk.PhotoImage(Image.open("images/inventory.png").resize((24, 24)))#type: ignore
+        self.transactions_icon = ImageTk.PhotoImage(Image.open("images/transaction.png").resize((24, 24)))#type: ignore
+        self.logout_icon = ImageTk.PhotoImage(Image.open("images/logout.png").resize((24, 24)))#type: ignore
+        self.login_icon = ImageTk.PhotoImage(Image.open("images/login.png").resize((36, 36)))#type: ignore
         
         #navigation buttons 
         self.buttons = [
@@ -456,12 +460,12 @@ class HomePage(tk.Frame):
         # Shadow effect of the maincontent area
         shadow = tk.Frame(self, bg="#b5b7bb", bd=0)
         shadow.place(in_=self.main_content, relx=0, rely=0, x=-4, y=-4, relwidth=1, relheight=1, width=8, height=8)
-        self.main_content.lift() 
+        self.main_content.lift()  # type: ignore
         
         self.show_content(DefaultPage, userlogin = False)
 
     # Admin navigation bar method
-    def navbar(self, parent_frame):
+    def navbar(self, parent_frame: tk.Frame):
         # Create modern styled buttons for user role without changing names
         for text, icon, cmd in self.buttons:
             if self.role == "user" and text not in ["Start Shift", "Logout"]:
@@ -505,7 +509,7 @@ class HomePage(tk.Frame):
             cursor.execute('''INSERT INTO shift(user_id, shift_date, shift_type, shift_start_time) 
                 VALUES (?, ?, ?, ?)''',(user_id, shift_date, shift_type, timenow))
             conn.commit()  
-            messagebox.showinfo("Start Shift", f"{shift_type} Shift started successfully at {timenow}")
+            messagebox.showinfo("Start Shift", f"{shift_type} Shift started successfully at {timenow}")#type: ignore
             getattr(self, "shift_button").config(text ="End Shift")
             self.shift_started = True  
             self.controller.shift_started = True 
@@ -517,7 +521,7 @@ class HomePage(tk.Frame):
                 shift_id = row[0]
                 cursor.execute('UPDATE shift SET shift_end_time = ? WHERE shift_id = ?', (timenow, shift_id))
                 conn.commit()
-            messagebox.showinfo("End shift",f"{shift_type} Shift ended at {timenow}")
+            messagebox.showinfo("End shift",f"{shift_type} Shift ended at {timenow}")#type: ignore
             getattr(self, "shift_button").config(text ="Start Shift")
             self.shift_started = False
             self.controller.shift_started = False
@@ -525,9 +529,9 @@ class HomePage(tk.Frame):
         conn.close()
     
     # Method to handle button clicks 
-    def Onclick(self, number):
-        def income_report(time_period):
-            messagebox.showinfo("Income Report", "Income report generated successfully!")
+    def Onclick(self, number: int):
+        def income_report(time_period: str):
+            messagebox.showinfo("Income Report", "Income report generated successfully!")#type: ignore
             self.show_content(IncomePage)
         match number:
             case 1:
@@ -549,14 +553,16 @@ class HomePage(tk.Frame):
                 self.show_content(TransactionsPage)
             case 7:
                 if self.controller.shift_started:
-                    messagebox.showwarning("Action Blocked", "You cannot logout while a shift is active. Please end the shift first.")
+                    messagebox.showwarning("Action Blocked", "You cannot logout while a shift is active. Please end the shift first.")#type: ignore
                     self.show_content(DefaultPage, userlogin = True)
                 else:
-                    if messagebox.askyesno("Logout", "Are you sure you want to logout?"):
+                    if messagebox.askyesno("Logout", "Are you sure you want to logout?"): #type: ignore
                         self.controller.show_frame("LoginPage")  
+            case _:
+                pass
     
     #method for switching frames when buttons are clicked                
-    def show_content(self, PageClass, *args, **kwargs):
+    def show_content(self, PageClass: Type[T], *args: Any, **kwargs: Any)-> None:
         if self.current_page:
             self.current_page.destroy()
         if PageClass == DefaultPage:
@@ -565,15 +571,15 @@ class HomePage(tk.Frame):
         self.current_page.pack(fill='both', expand=True)
         
 class DefaultPage(tk.Frame):
-    def __init__(self, parent, userlogin = False, user_id = None):
+    def __init__(self, parent: tk.Frame, userlogin: bool = False, user_id: int | None = None):
         super().__init__(parent, bg='#91C4EE')
         
-        self.diesel1_icon = ImageTk.PhotoImage(Image.open("images/diesel_1.png").resize((48, 48)))
-        self.diesel2_icon = ImageTk.PhotoImage(Image.open("images/diesel_2.png").resize((48, 48)))
-        self.premium1_icon = ImageTk.PhotoImage(Image.open("images/premium_1.png").resize((48, 48)))
-        self.premium2_icon = ImageTk.PhotoImage(Image.open("images/premium_2.png").resize((48, 48)))
-        self.premium3_icon = ImageTk.PhotoImage(Image.open("images/premium_3.png").resize((48, 48)))
-        self.unleaded_icon = ImageTk.PhotoImage(Image.open("images/unleaded.png").resize((48, 48)))
+        self.diesel1_icon = ImageTk.PhotoImage(Image.open("images/diesel_1.png").resize((48, 48)))#type: ignore
+        self.diesel2_icon = ImageTk.PhotoImage(Image.open("images/diesel_2.png").resize((48, 48)))#type: ignore
+        self.premium1_icon = ImageTk.PhotoImage(Image.open("images/premium_1.png").resize((48, 48)))#type: ignore
+        self.premium2_icon = ImageTk.PhotoImage(Image.open("images/premium_2.png").resize((48, 48)))#type: ignore
+        self.premium3_icon = ImageTk.PhotoImage(Image.open("images/premium_3.png").resize((48, 48)))#type: ignore
+        self.unleaded_icon = ImageTk.PhotoImage(Image.open("images/unleaded.png").resize((48, 48)))#type: ignore
         
         self.userlogin = userlogin
         self.user_id = user_id
@@ -668,7 +674,7 @@ class DefaultPage(tk.Frame):
             price_txbx.pack(anchor='center', padx= 10, pady= 5)
             setattr(self, button_name, button)
             setattr(self, volume_textbox, volumetxbx)
-            getattr(self, volume_textbox).bind('<KeyRelease>', lambda e, n=cmd_num: self.update_price(n, self.widget_configs[n-1][5],self.widget_configs[n-1][6]))
+            getattr(self, volume_textbox).bind('<KeyRelease>', lambda e, n=cmd_num: self.update_price(n, self.widget_configs[n-1][5],self.widget_configs[n-1][6]))#type: ignore
             setattr(self, price_texbox, price_txbx)
             
         # Container frame on bottom left square
@@ -762,7 +768,7 @@ class DefaultPage(tk.Frame):
                     price_str = f"{price:.2f}"
                 except ValueError:
                     price_str = ""
-                    self.clearbox(priceboxname)
+                self.clearbox(priceboxname, price_str)
             case 2:
                 try:
                     volume = float(getattr(self, volumeboxname).get())
@@ -770,7 +776,7 @@ class DefaultPage(tk.Frame):
                     price_str = f"{price:.2f}"
                 except ValueError:
                     price_str = ""
-                    self.clearbox(priceboxname)
+                self.clearbox(priceboxname, price_str)
             case 3:
                 try:
                     volume = float(getattr(self, volumeboxname).get())
@@ -778,7 +784,7 @@ class DefaultPage(tk.Frame):
                     price_str = f"{price:.2f}"
                 except ValueError:
                     price_str = ""
-                    self.clearbox(priceboxname)
+                self.clearbox(priceboxname, price_str)
             case 4:
                 try:
                     volume = float(getattr(self, volumeboxname).get())
@@ -786,7 +792,7 @@ class DefaultPage(tk.Frame):
                     price_str = f"{price:.2f}"
                 except ValueError:
                     price_str = ""
-                    self.clearbox(priceboxname)  
+                self.clearbox(priceboxname, price_str)
             case 5:
                 try:
                     volume = float(getattr(self, volumeboxname).get())
@@ -794,7 +800,7 @@ class DefaultPage(tk.Frame):
                     price_str = f"{price:.2f}"
                 except ValueError:
                     price_str = ""
-                    self.clearbox(priceboxname)
+                self.clearbox(priceboxname, price_str)
             case 6:
                 try:
                     volume = float(getattr(self, volumeboxname).get())
@@ -802,7 +808,8 @@ class DefaultPage(tk.Frame):
                     price_str = f"{price:.2f}"
                 except ValueError:
                     price_str = ""
-                    self.clearbox(priceboxname)
+                self.clearbox(priceboxname, price_str)
+            case _: pass
     
     # Method to handle transaction submissions       
     def submit(self):
@@ -814,7 +821,7 @@ class DefaultPage(tk.Frame):
                 try:
                     volume_value = float(getattr(self, config[5]).get())
                     price_value = price_entry.get()
-                    answer = messagebox.askokcancel("Transaction Confirmation", 
+                    answer = messagebox.askokcancel("Transaction Confirmation", #type: ignore
                             "Are you sure all the information entered is correct") 
                     if answer:
                         #print(f"Enabled: {config[3]}, Volume: {volume_value}, Price: {price_value}")
@@ -836,7 +843,7 @@ class DefaultPage(tk.Frame):
                         conn.close()
                 except ValueError: 
                     #print(f"Invalid input in {config[3]}. Please enter numeric values.")
-                    messagebox.showinfo("Input Error", f"Please enter the correct inputs in {config[3]}.")
+                    messagebox.showinfo("Input Error", f"Please enter the correct inputs in {config[3]}.")#type: ignore
             else:
                 continue
                     
@@ -844,9 +851,10 @@ class DefaultPage(tk.Frame):
             self.clear()
     
     # Method to clear selected textbox
-    def clearbox(self, textboxname: str):
+    def clearbox(self, textboxname: str, price: str):
         getattr(self, textboxname).config(state = "normal")
         getattr(self, textboxname).delete(0, tk.END)
+        getattr(self, textboxname).insert(0, price)
         getattr(self, textboxname).config(state = "disabled")
     
     # Method to clear all textboxes
@@ -884,6 +892,7 @@ class DefaultPage(tk.Frame):
             case 6:
                 #print("Unleaded clicked")  
                 self.activatetextbox(entryname)
+            case _: pass
      
     #Bottom right corner clock and date label   
     def updateclock(self):
@@ -900,7 +909,6 @@ class DefaultPage(tk.Frame):
         last_logout_time = "N/A"
         cursor.execute("SELECT shift_id FROM shift WHERE shift_end_time IS NOT NULL ORDER BY shift_id DESC LIMIT 1")
         row = cursor.fetchone()
-        last_logout = "N/A"
         if row:
             latest_shift_id = row[0]
             # Now get the shift_end_time for that shift_id
@@ -924,7 +932,7 @@ class DefaultPage(tk.Frame):
             self.after(1000, self.updateclock)  
     
     #Method to remove focus when a textbox is focused on
-    def remove_focus(self, event):
+    def remove_focus(self, event: tk.Event):
         widget = event.widget
         if not isinstance(widget, ttk.Entry):
             try:
@@ -942,17 +950,17 @@ class DefaultPage(tk.Frame):
                 getattr(self, textbox[5]).config(state = "disabled")            
             
 class TransactionsPage(tk.Frame):
-    def __init__(self, parent):
+    def __init__(self, parent: tk.Frame):
         super().__init__(parent, bg='white')
         
         #Tree table
-        style = ttk.Style()
+        style:ttk.Style = ttk.Style()
         style.theme_use('alt')
-        style.configure("Custom.Treeview",
+        style.configure("Custom.Treeview", #type: ignore
                         background="white",
                         foreground="black",
                         rowheight=25,
-                        fieldbackground="white")
+                        fieldbackground="white") 
         
         columns = ('Pump Label', 'Fuel_type', 'Volume(Liters)', 'Price(Pesos)', 'Date(MM/DD/YY)')
         tree = ttk.Treeview(self, columns=columns, show='headings', style= "Custom.Treeview")
@@ -962,13 +970,13 @@ class TransactionsPage(tk.Frame):
         tree.pack(side='left', fill='both', expand=True)
 
         #Vertical scrollbar
-        scrollbar = ttk.Scrollbar(self, orient='vertical', command=tree.yview)
+        scrollbar = ttk.Scrollbar(self, orient='vertical', command=tree.yview) #type: ignore
         tree.configure(yscroll=scrollbar.set) # type: ignore
         scrollbar.pack(side='right', fill='y')
 
         # Event binding to remove focus
-        def on_tree_click(event):
-            region = tree.identify("region", event.x, event.y)
+        def on_tree_click(event: tk.Event):
+            region = tree.identify("region", event.x, event.y)#type: ignore
             if region != "cell":
                 tree.selection_remove(tree.selection())
 
@@ -993,10 +1001,10 @@ class TransactionsPage(tk.Frame):
             tree.insert('', 'end', values=values, tags=(tag,))
         tree.tag_configure('evenrow', background="#c6ccc6")
         tree.tag_configure('oddrow', background="#949994")
-        style.map('Custom.Treeview', background=[('selected', "#627595")])
+        style.map('Custom.Treeview', background=[('selected', "#627595")])#type: ignore
                
 class PricePage(tk.Frame):
-    def __init__(self, parent):
+    def __init__(self, parent: tk.Frame):
         super().__init__(parent, bg='#91C4EE', bd=2, relief='solid')
         
         # Main container for centering content
@@ -1109,13 +1117,14 @@ class PricePage(tk.Frame):
                print(f"Clicked {button_number}", entryname)
                self.clear(entryname)
                self.disable(entryname)
+            case _: pass
                
     def clear(self, widget: str):
         for textbox in self.widgets: 
             if textbox[2] != widget:
                 getattr(self, textbox[2]).delete(0,tk.END)  
                   
-    def disable(self, widget):
+    def disable(self, widget: str):
         for textbox in self.widgets: 
             if textbox[2] != widget:
                 getattr(self, textbox[2]).config(state = 'disabled')  
@@ -1124,17 +1133,17 @@ class PricePage(tk.Frame):
         print(f"added value {value}")             
                 
 class DeliveryPage(tk.Frame):
-    def __init__(self, parent):
+    def __init__(self, parent:tk.Frame):
         super().__init__(parent, bg='white')
         tk.Label(self, text="Delivery Content").pack()
         
 class IncomePage(tk.Frame):
-    def __init__(self, parent):
+    def __init__(self, parent:tk.Frame):
         super().__init__(parent, bg='white')
         tk.Label(self, text="Dashboard Content").pack()
 
 class InventoryPage(tk.Frame):
-    def __init__(self, parent):
+    def __init__(self, parent:tk.Frame):
         super().__init__(parent, bg='white')
         tk.Label(self, text="Inventory Content").pack()
 
