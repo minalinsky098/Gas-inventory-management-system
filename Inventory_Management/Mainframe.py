@@ -182,7 +182,7 @@ class ProjectFrame(tk.Tk):
     def on_closing(self):
         if self.shift_started:
             messagebox.showwarning("Action Blocked", "You cannot exit the program while logged in. Please logout first.")
-            self.homepage.show_content(DefaultPage, userlogin = True)
+            self.homepage.show_content(DefaultPage, userlogin = True) # type: ignore
         else:
             self.destroy()
 
@@ -506,7 +506,7 @@ class HomePage(tk.Frame):
                 VALUES (?, ?, ?, ?)''',(user_id, shift_date, shift_type, timenow))
             conn.commit()  
             messagebox.showinfo("Start Shift", f"{shift_type} Shift started successfully at {timenow}")
-            self.shift_button.config(text="End Shift")
+            getattr(self, "shift_button").config(text ="End Shift")
             self.shift_started = True  
             self.controller.shift_started = True 
             self.show_content(DefaultPage, userlogin = True)
@@ -518,7 +518,7 @@ class HomePage(tk.Frame):
                 cursor.execute('UPDATE shift SET shift_end_time = ? WHERE shift_id = ?', (timenow, shift_id))
                 conn.commit()
             messagebox.showinfo("End shift",f"{shift_type} Shift ended at {timenow}")
-            self.shift_button.config(text="Start Shift")
+            getattr(self, "shift_button").config(text ="Start Shift")
             self.shift_started = False
             self.controller.shift_started = False
             self.show_content(DefaultPage, userlogin = False)
@@ -639,7 +639,7 @@ class DefaultPage(tk.Frame):
                     padx=10,
                     pady=5,
                     relief='raised',
-                    command=lambda n = cmd_num: self.Onclick(n),
+                    command=lambda n = cmd_num: self.Onclick(n, self.widget_configs[n-1][5]),
                     cursor="hand2",
                     activebackground="#4f5a62",
                     state = "disabled",
@@ -668,7 +668,7 @@ class DefaultPage(tk.Frame):
             price_txbx.pack(anchor='center', padx= 10, pady= 5)
             setattr(self, button_name, button)
             setattr(self, volume_textbox, volumetxbx)
-            getattr(self, volume_textbox).bind('<KeyRelease>', lambda e, n=cmd_num: self.update_price(n))
+            getattr(self, volume_textbox).bind('<KeyRelease>', lambda e, n=cmd_num: self.update_price(n, self.widget_configs[n-1][5],self.widget_configs[n-1][6]))
             setattr(self, price_texbox, price_txbx)
             
         # Container frame on bottom left square
@@ -753,74 +753,56 @@ class DefaultPage(tk.Frame):
                 getattr(self, textbox[6]).delete(0,tk.END)
     
     #This method calculates the price based on the volume entered in the corresponding textbox
-    def update_price(self, number):
+    def update_price(self, number: int, volumeboxname: str, priceboxname: str):
         match number:
             case 1:
                 try:
-                    volume = float(self.diesel1_volume_textbox.get())
+                    volume = float(getattr(self, volumeboxname).get())
                     price = volume *50
                     price_str = f"{price:.2f}"
                 except ValueError:
                     price_str = ""
-                self.diesel1_price_textbox.config(state="normal")
-                self.diesel1_price_textbox.delete(0, tk.END)
-                self.diesel1_price_textbox.insert(0, price_str)
-                self.diesel1_price_textbox.config(state="disabled")
+                    self.clearbox(priceboxname)
             case 2:
                 try:
-                    volume = float(self.diesel2_volume_textbox.get())
+                    volume = float(getattr(self, volumeboxname).get())
                     price = volume *50
                     price_str = f"{price:.2f}"
                 except ValueError:
                     price_str = ""
-                self.diesel2_price_textbox.config(state="normal")
-                self.diesel2_price_textbox.delete(0, tk.END)
-                self.diesel2_price_textbox.insert(0, price_str)
-                self.diesel2_price_textbox.config(state="disabled") 
+                    self.clearbox(priceboxname)
             case 3:
                 try:
-                    volume = float(self.premium1_volume_textbox.get())
+                    volume = float(getattr(self, volumeboxname).get())
                     price = volume *50
                     price_str = f"{price:.2f}"
                 except ValueError:
                     price_str = ""
-                self.premium1_price_textbox.config(state="normal")
-                self.premium1_price_textbox.delete(0, tk.END)
-                self.premium1_price_textbox.insert(0, price_str)
-                self.premium1_price_textbox.config(state="disabled")  
+                    self.clearbox(priceboxname)
             case 4:
                 try:
-                    volume = float(self.premium2_volume_textbox.get())
+                    volume = float(getattr(self, volumeboxname).get())
                     price = volume *50
                     price_str = f"{price:.2f}"
                 except ValueError:
                     price_str = ""
-                self.premium2_price_textbox.config(state="normal")
-                self.premium2_price_textbox.delete(0, tk.END)
-                self.premium2_price_textbox.insert(0, price_str)
-                self.premium2_price_textbox.config(state="disabled")  
+                    self.clearbox(priceboxname)  
             case 5:
                 try:
-                    volume = float(self.premium3_volume_textbox.get())
+                    volume = float(getattr(self, volumeboxname).get())
                     price = volume *50
                     price_str = f"{price:.2f}"
                 except ValueError:
                     price_str = ""
-                self.premium3_price_textbox.config(state="normal")
-                self.premium3_price_textbox.delete(0, tk.END)
-                self.premium3_price_textbox.insert(0, price_str)
-                self.premium3_price_textbox.config(state="disabled")
+                    self.clearbox(priceboxname)
             case 6:
                 try:
-                    volume = float(self.unleaded_volume_textbox.get())
+                    volume = float(getattr(self, volumeboxname).get())
                     price = volume *50
                     price_str = f"{price:.2f}"
                 except ValueError:
                     price_str = ""
-                self.unleaded_price_textbox.config(state="normal")
-                self.unleaded_price_textbox.delete(0, tk.END)
-                self.unleaded_price_textbox.insert(0, price_str)
-                self.unleaded_price_textbox.config(state="disabled")    
+                    self.clearbox(priceboxname)
     
     # Method to handle transaction submissions       
     def submit(self):
@@ -828,24 +810,24 @@ class DefaultPage(tk.Frame):
             volume_entry = getattr(self, config[5])
             price_entry = getattr(self, config[6])
             if str(volume_entry['state']) == 'normal':
-                print(f"Transaction of: {config[3]}")
+                #print(f"Transaction of: {config[3]}")
                 try:
                     volume_value = float(getattr(self, config[5]).get())
                     price_value = price_entry.get()
                     answer = messagebox.askokcancel("Transaction Confirmation", 
                             "Are you sure all the information entered is correct") 
                     if answer:
-                        print(f"Enabled: {config[3]}, Volume: {volume_value}, Price: {price_value}")
+                        #print(f"Enabled: {config[3]}, Volume: {volume_value}, Price: {price_value}")
                         conn = sqlite3.connect('Databases/inventory_db.db')
                         cursor = conn.cursor()
                         pump_label = config[3]
-                        print(pump_label)
+                        #print(pump_label)
                         pump_id_row = cursor.execute("SELECT pump_id FROM pump WHERE pump_label = ?", (pump_label,)).fetchone()
                         pump_id = pump_id_row[0]
-                        print(pump_id)
+                        #print(pump_id)
                         shift_id_row = cursor.execute("Select shift_id FROM shift ORDER BY shift_id DESC LIMIT 1").fetchone()
                         shift_id = shift_id_row[0]
-                        print(shift_id)
+                        #print(shift_id)
                         cursor.execute('''
                                        INSERT INTO transactions(shift_id, pump_id, volume, price)
                                        Values(?,?,?,?)
@@ -853,13 +835,19 @@ class DefaultPage(tk.Frame):
                         conn.commit()
                         conn.close()
                 except ValueError: 
-                    print(f"Invalid input in {config[3]}. Please enter numeric values.")
+                    #print(f"Invalid input in {config[3]}. Please enter numeric values.")
                     messagebox.showinfo("Input Error", f"Please enter the correct inputs in {config[3]}.")
             else:
                 continue
                     
                 # You can now use volume_value and price_value as needed
             self.clear()
+    
+    # Method to clear selected textbox
+    def clearbox(self, textboxname: str):
+        getattr(self, textboxname).config(state = "normal")
+        getattr(self, textboxname).delete(0, tk.END)
+        getattr(self, textboxname).config(state = "disabled")
     
     # Method to clear all textboxes
     def clear(self):
@@ -870,56 +858,32 @@ class DefaultPage(tk.Frame):
             getattr(self, textbox[6]).config(state="disabled")                 
     
     #Method to handle button clicks TBR      
-    def Onclick(self, button_number):
+    def Onclick(self, button_number: int, entryname: str):
+        self.clear()
         match button_number:
             case 1:
-                print("Diesel 1 clicked")
-                self.clear()
-                self.diesel1_volume_textbox.config(state = "normal")
-                self.diesel1_volume_textbox.focus_set()
-                for textbox in self.widget_configs:
-                    if textbox[5] != "diesel1_volume_textbox":
-                        getattr(self, textbox[5]).config(state = "disabled")
+                #print("Diesel 1 clicked")
+                self.activatetextbox(entryname)
+                
             case 2:
-                print("Diesel 2 clicked")
-                self.clear()
-                self.diesel2_volume_textbox.config(state = "normal")
-                self.diesel2_volume_textbox.focus_set()
-                for textbox in self.widget_configs:
-                    if textbox[5] != "diesel2_volume_textbox":
-                        getattr(self, textbox[5]).config(state = "disabled")
+                #print("Diesel 2 clicked")
+                self.activatetextbox(entryname)
+
             case 3:
-                print("Premium 1 clicked")
-                self.clear()
-                self.premium1_volume_textbox.config(state = "normal")
-                self.premium1_volume_textbox.focus_set()
-                for textbox in self.widget_configs:
-                    if textbox[5] != "premium1_volume_textbox":
-                        getattr(self, textbox[5]).config(state = "disabled")
+                #print("Premium 1 clicked")
+                self.activatetextbox(entryname)
+
             case 4:
-                print("Premium 2 clicked")
-                self.clear()
-                self.premium2_volume_textbox.config(state = "normal")
-                self.premium2_volume_textbox.focus_set()
-                for textbox in self.widget_configs:
-                    if textbox[5] != "premium2_volume_textbox":
-                        getattr(self, textbox[5]).config(state = "disabled")
+                #print("Premium 2 clicked")
+                self.activatetextbox(entryname)
+
             case 5:
-                print("Premium 3 clicked")
-                self.clear()
-                self.premium3_volume_textbox.config(state = "normal")
-                self.premium3_volume_textbox.focus_set()
-                for textbox in self.widget_configs:
-                    if textbox[5] != "premium3_volume_textbox":
-                        getattr(self, textbox[5]).config(state = "disabled")
+                #print("Premium 3 clicked")
+                self.activatetextbox(entryname)
+
             case 6:
-                print("Unleaded clicked")  
-                self.clear()
-                self.unleaded_volume_textbox.config(state = "normal")
-                self.unleaded_volume_textbox.focus_set()
-                for textbox in self.widget_configs:
-                    if textbox[5] != "unleaded_volume_textbox":
-                        getattr(self, textbox[5]).config(state = "disabled")
+                #print("Unleaded clicked")  
+                self.activatetextbox(entryname)
      
     #Bottom right corner clock and date label   
     def updateclock(self):
@@ -968,6 +932,14 @@ class DefaultPage(tk.Frame):
                     self.dummy_focus.focus_set()
             except tk.TclError:
                 pass  
+    
+    #Method to activate textbox
+    def activatetextbox(self, textboxname: str):  
+        getattr(self, textboxname).config(state = "normal")   
+        getattr(self, textboxname).focus_set()
+        for textbox in self.widget_configs:
+            if textbox[5] != textboxname:
+                getattr(self, textbox[5]).config(state = "disabled")            
             
 class TransactionsPage(tk.Frame):
     def __init__(self, parent):
@@ -991,13 +963,12 @@ class TransactionsPage(tk.Frame):
 
         #Vertical scrollbar
         scrollbar = ttk.Scrollbar(self, orient='vertical', command=tree.yview)
-        tree.configure(yscroll=scrollbar.set)
+        tree.configure(yscroll=scrollbar.set) # type: ignore
         scrollbar.pack(side='right', fill='y')
 
         # Event binding to remove focus
         def on_tree_click(event):
             region = tree.identify("region", event.x, event.y)
-            print(region)
             if region != "cell":
                 tree.selection_remove(tree.selection())
 
@@ -1029,43 +1000,129 @@ class PricePage(tk.Frame):
         super().__init__(parent, bg='#91C4EE', bd=2, relief='solid')
         
         # Main container for centering content
-        container = tk.Frame(self, bg='#91C4EE', bd = 5, relief = 'solid')
-        container.pack(fill='both', expand=True)
+        self.container = tk.Frame(self, bg='#91C4EE', bd = 5, relief = 'solid')
+        self.container.pack(fill='both', expand=True)
         
         # Left frame (west)
-        Current_Liter_Price = tk.Frame(
-            container, 
+        self.Current_Liter_Price = tk.Frame(
+            self.container, 
             bg="#ffffff", 
             width=300, 
             height=600,
             bd=2, 
             relief='solid'
         )
-    
-        Current_Liter_Price.pack(side='left', fill='y', padx=(50, 50), pady=30)
+        self.Current_Liter_Price.pack(side='left', fill='y', padx=(50, 50), pady=30)
         
         # Center frame
-        EditPriceFrame = tk.Frame(
-            container, 
+        self.EditPriceFrame = tk.Frame(
+            self.container, 
             bg="#ffffff", 
             width=600, 
             height=600,
             bd=2, 
             relief='solid'
         )
-        EditPriceFrame.pack(side='left', fill='none', padx=20, pady=30)
+        self.EditPriceFrame.pack(side='left', fill='both',expand = True, padx=20, pady=30)
+        
+        self.widgets = [("Diesel_Norm_Row","dieselnorm_button", "dieselnormentry", 1, "Diesel Change Price"), 
+                   ("Premium_Norm_Row","premiumnorm_button", "premiumnormentry", 2, "Premium Change Price"), 
+                   ("Unleaded_Norm_Row","unleadednorm_button", "unleadednormentry", 3, "Unleaded Change Price"),
+                   ("Diesel100_Row","diesel100button", "diesel100entry", 4, "Diesel 100L Change Price"),
+                   ("Premium100_Row","premium100button", "premium100entry", 5, "Premium 100L Change Price"), 
+                   ("Unleaded100_Row","unleaded100button", "unleaded100entry", 6, "Unleaded 100L Change Price")]
+        for r in range(6):
+            self.EditPriceFrame.grid_rowconfigure(r, weight=1)
+            self.EditPriceFrame.grid_columnconfigure(0, weight=1)
+            row = tk.Frame(self.EditPriceFrame, bg = "#148DD9", bd = 2, relief = 'solid')
+            row.grid(row = r, column= 0,sticky="nsew",padx =5, pady = 2)
+            row.grid_propagate(False)
+            row_name = self.widgets[r][0]
+            setattr(self, row_name, row)
+            
+        for row_name, buttonname, entryname, button_number, text in self.widgets:
+            button = tk.Button(
+            getattr(self, row_name),
+            text=text,
+            compound='left',
+            bg="#70818c", 
+            fg='white',
+            font=("Segoe UI", 10, "bold"),
+            bd=4,
+            command = lambda n = button_number: self.Onclick(n, self.widgets[n-1][2]),
+            padx=10,
+            pady=5,
+            relief='raised',
+            cursor="hand2",
+            activebackground="#4f5a62",
+            height = 2,
+            )
+            button.pack(side='left', fill = 'x', expand = 1, padx=10, pady=5)
+            setattr(self, buttonname, button)
+            entry = ttk.Entry(
+            getattr(self, row_name),
+            width=20, 
+            font=("Comic Sans MS", 20),
+            state = 'disabled'
+            )
+            entry.pack(side='left', fill = 'x', expand = 1, padx=10, pady=5)
+            setattr(self, entryname, entry)
         
         # Right frame (east)
-        Current_100L_Price = tk.Frame(
-            container, 
+        self.Current_100L_Price = tk.Frame(
+            self.container, 
             bg="#ffffff", 
             width=300, 
             height=600,
             bd=2, 
             relief='solid'
         )
-        Current_100L_Price.pack(side='left', fill='y', padx=(50, 50), pady=30)
+        self.Current_100L_Price.pack(side='left', fill='y', padx=(50, 50), pady=30)
         
+    def Onclick(self, button_number: int, entryname: str):
+        getattr(self, entryname).config(state ='normal')
+        getattr(self, entryname).focus_set()
+        match button_number:
+            case 1:
+                print(f"Clicked {button_number}", entryname)
+                self.clear(entryname)
+                self.disable(entryname)
+                value = float(getattr(self, entryname).get())
+                self.addvalue(value)
+            case 2:
+                print(f"Clicked {button_number}", entryname)
+                self.clear(entryname)
+                self.disable(entryname)
+            case 3:
+                print(f"Clicked {button_number}", entryname)
+                self.clear(entryname)
+                self.disable(entryname)
+            case 4:
+                print(f"Clicked {button_number}", entryname)
+                self.clear(entryname)
+                self.disable(entryname)
+            case 5:
+                print(f"Clicked {button_number}", entryname)
+                self.clear(entryname)
+                self.disable(entryname)
+            case 6:   
+               print(f"Clicked {button_number}", entryname)
+               self.clear(entryname)
+               self.disable(entryname)
+               
+    def clear(self, widget: str):
+        for textbox in self.widgets: 
+            if textbox[2] != widget:
+                getattr(self, textbox[2]).delete(0,tk.END)  
+                  
+    def disable(self, widget):
+        for textbox in self.widgets: 
+            if textbox[2] != widget:
+                getattr(self, textbox[2]).config(state = 'disabled')  
+                
+    def addvalue(self, value: float):
+        print(f"added value {value}")             
+                
 class DeliveryPage(tk.Frame):
     def __init__(self, parent):
         super().__init__(parent, bg='white')
