@@ -972,8 +972,10 @@ class DefaultPage(tk.Frame):
 class TransactionsPage(tk.Frame):
     def __init__(self, parent):
         super().__init__(parent, bg='white')
-        # Example: Scrollable table using ttk.Treeview
+        
+        #Tree table
         style = ttk.Style()
+        style.theme_use('alt')
         style.configure("Custom.Treeview",
                         background="white",
                         foreground="black",
@@ -987,12 +989,20 @@ class TransactionsPage(tk.Frame):
             tree.column(col, anchor='w', width=100)
         tree.pack(side='left', fill='both', expand=True)
 
-        # Add vertical scrollbar
+        #Vertical scrollbar
         scrollbar = ttk.Scrollbar(self, orient='vertical', command=tree.yview)
         tree.configure(yscroll=scrollbar.set)
         scrollbar.pack(side='right', fill='y')
 
-        # Example data
+        # Event binding to remove focus
+        def on_tree_click(event):
+            region = tree.identify("region", event.x, event.y)
+            print(region)
+            if region != "cell":
+                tree.selection_remove(tree.selection())
+
+        tree.bind("<Button-1>", on_tree_click)
+
         connect = sqlite3.connect('Databases/inventory_db.db')
         cursor = connect.cursor()
         cursor.execute('''SELECT 
@@ -1006,14 +1016,13 @@ class TransactionsPage(tk.Frame):
                        JOIN fuel_type ON pump.fuel_type_id = fuel_type.fuel_type_id
                        ORDER BY transactions.transaction_id''')
         rows = cursor.fetchall()
-        print(rows)
         connect.close()
         for i, values in enumerate(rows):
             tag = 'evenrow' if i % 2 == 0 else 'oddrow'
             tree.insert('', 'end', values=values, tags=(tag,))
-        tree.tag_configure('evenrow', background="#86ea86")
-        tree.tag_configure('oddrow', background="#7cacdf")
-        style.map('Custom.Treeview', background=[('selected', "#8e8e8e")])
+        tree.tag_configure('evenrow', background="#c6ccc6")
+        tree.tag_configure('oddrow', background="#949994")
+        style.map('Custom.Treeview', background=[('selected', "#627595")])
                
 class PricePage(tk.Frame):
     def __init__(self, parent):
