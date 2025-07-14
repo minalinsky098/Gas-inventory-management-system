@@ -1,11 +1,11 @@
 import tkinter as tk
 from PIL import Image, ImageTk 
 from tkinter import messagebox, simpledialog, ttk
-
 import datetime
 import sqlite3
 import hashlib
 from typing import Dict, Union, cast, Type, TypeVar, Any
+T = TypeVar('T', bound=tk.Frame)
 
 def hash_password(password: str):
     return hashlib.sha256(password.encode()).hexdigest()
@@ -67,10 +67,11 @@ def setup_database():
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS price(
         price_id INTEGER PRIMARY KEY AUTOINCREMENT,
-        pump_id INTEGER NOT NULL,
-        price INTEGER NOT NULL, 
+        fuel_type_id INTEGER NOT NULL,
+        Name Text Not NULL,
+        price REAL NOT NULL, 
         effective_date DATETIME DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (pump_id) REFERENCES pump(pump_id)
+        FOREIGN KEY (fuel_type_id) REFERENCES fuel_type(fuel_type_id)
         )
         '''
     )
@@ -97,8 +98,7 @@ def setup_database():
     
     #new admin setup
     cursor.execute('SELECT COUNT(*) FROM users')
-    if cursor.fetchone()[0] == 0:
-        
+    if cursor.fetchone()[0] == 0: 
         root = tk.Tk()
         root.withdraw()  
         new_admin_password = None
@@ -117,6 +117,42 @@ def setup_database():
             ('user123', hash_password('qwertyuiop'))  #employee user setup
         )
         root.destroy()
+        
+    #setup prices initally
+    cursor.execute('SELECT COUNT(*) FROM price')
+    if cursor.fetchone()[0] == 0:
+        dieselprice = simpledialog.askfloat(
+                "Set Diesel Price",
+                "Enter price per liter of diesel:",
+            )
+        cursor.execute('INSERT INTO price(fuel_type_id, price, Name) VALUES (?,?,?)', (1,dieselprice,'Diesel',))
+        diesel100price = simpledialog.askfloat(
+                "Set Diesel100 Price",
+                "Enter price per 100 liters of diesel:",
+            )
+        cursor.execute('INSERT INTO price(fuel_type_id, price, Name) VALUES (?,?,?)', (1,diesel100price,'Diesel100',))
+        
+        premiumprice = simpledialog.askfloat(
+                "Set Premium Price",
+                "Enter price per liter of premium:",
+            )
+        cursor.execute('INSERT INTO price(fuel_type_id, price, Name) VALUES (?,?,?)', (2,premiumprice,'Premium',))
+        premium100price = simpledialog.askfloat(
+                "Set Premium100 Price",
+                "Enter price per 100 liters of premium:",
+            )
+        cursor.execute('INSERT INTO price(fuel_type_id, price, Name) VALUES (?,?,?)', (2,premium100price,'Premium100',))
+        
+        unleadedprice = simpledialog.askfloat(
+                "Set Unleaded Price",
+                "Enter price per liter of Unleaded:",
+            )
+        cursor.execute('INSERT INTO price(fuel_type_id, price, Name) VALUES (?,?,?)', (3,unleadedprice,'Unleaded',))
+        unleaded100price = simpledialog.askfloat(
+                "Set Unleaded100 Price",
+                "Enter price per 100 liters of Unleaded:",
+            )
+        cursor.execute('INSERT INTO price(fuel_type_id, price, Name) VALUES (?,?,?)', (3,unleaded100price,'Unleaded100',))
 
     conn.commit()
     conn.close()
@@ -189,7 +225,6 @@ class ProjectFrame(tk.Tk):
         else:
             self.destroy()
 
-T = TypeVar('T', bound=tk.Frame)
 class LoginPage(tk.Frame):
     def __init__(self, parent: tk.Tk, controller: ProjectFrame):
         super().__init__(parent)
@@ -760,56 +795,92 @@ class DefaultPage(tk.Frame):
     
     #This method calculates the price based on the volume entered in the corresponding textbox
     def update_price(self, number: int, volumeboxname: str, priceboxname: str):
+        price_per_liter: float = 0
+        conn = sqlite3.connect('Databases/inventory_db.db')
+        cursor = conn.cursor()
         match number:
-            case 1:
+            case 1 | 2:
                 try:
                     volume = float(getattr(self, volumeboxname).get())
-                    price = volume *50
+                    cursor.execute('SELECT COUNT(*) FROM fuel_type')
+                    if volume < 100:
+                        cursor.execute('''
+                               SELECT price from price 
+                               WHERE fuel_type_id = ?
+                               AND Name = ?
+                               ORDER BY price_id DESC
+                               LIMIT 1
+                               ''',(1,"Diesel",))
+                    else:
+                        cursor.execute('''
+                               SELECT price from price 
+                               WHERE fuel_type_id = ?
+                               AND Name = ?
+                               ORDER BY price_id DESC
+                               LIMIT 1
+                               ''',(1,"Diesel100",))
+                    price_row = cursor.fetchone()
+                    price_per_liter = price_row[0]
+                    price = volume *price_per_liter
                     price_str = f"{price:.2f}"
-                except ValueError:
+                except Exception as e: #type: ignore
                     price_str = ""
                 self.clearbox(priceboxname, price_str)
-            case 2:
+            case 3 | 4 | 5:
                 try:
                     volume = float(getattr(self, volumeboxname).get())
-                    price = volume *50
+                    if volume < 100:
+                        cursor.execute('''
+                               SELECT price from price 
+                               WHERE fuel_type_id = ?
+                               AND Name = ?
+                               ORDER BY price_id DESC
+                               LIMIT 1
+                               ''',(2,"Premium",))
+                    else:
+                        cursor.execute('''
+                               SELECT price from price 
+                               WHERE fuel_type_id = ?
+                               AND Name = ?
+                               ORDER BY price_id DESC
+                               LIMIT 1
+                               ''',(2,"Premium100",))
+                    price_row = cursor.fetchone()
+                    price_per_liter = price_row[0]
+                    price = volume *price_per_liter
                     price_str = f"{price:.2f}"
-                except ValueError:
-                    price_str = ""
-                self.clearbox(priceboxname, price_str)
-            case 3:
-                try:
-                    volume = float(getattr(self, volumeboxname).get())
-                    price = volume *50
-                    price_str = f"{price:.2f}"
-                except ValueError:
-                    price_str = ""
-                self.clearbox(priceboxname, price_str)
-            case 4:
-                try:
-                    volume = float(getattr(self, volumeboxname).get())
-                    price = volume *50
-                    price_str = f"{price:.2f}"
-                except ValueError:
-                    price_str = ""
-                self.clearbox(priceboxname, price_str)
-            case 5:
-                try:
-                    volume = float(getattr(self, volumeboxname).get())
-                    price = volume *50
-                    price_str = f"{price:.2f}"
-                except ValueError:
+                except Exception as e: #type: ignore
                     price_str = ""
                 self.clearbox(priceboxname, price_str)
             case 6:
                 try:
                     volume = float(getattr(self, volumeboxname).get())
-                    price = volume *50
+                    if volume < 100:
+                        cursor.execute('''
+                               SELECT price from price 
+                               WHERE fuel_type_id = ?
+                               AND Name = ?
+                               ORDER BY price_id DESC
+                               LIMIT 1
+                               ''',(3,"Unleaded",))
+                    else:
+                        cursor.execute('''
+                               SELECT price from price 
+                               WHERE fuel_type_id = ?
+                               AND Name = ?
+                               ORDER BY price_id DESC
+                               LIMIT 1
+                               ''',(3,"Unleaded100",))
+                    price_row = cursor.fetchone()
+                    price_per_liter = price_row[0]
+                    price = volume *price_per_liter
                     price_str = f"{price:.2f}"
-                except ValueError:
+                except Exception as e: #type: ignore
                     price_str = ""
                 self.clearbox(priceboxname, price_str)
             case _: pass
+        conn.commit()
+        conn.close()
     
     # Method to handle transaction submissions       
     def submit(self):
@@ -1025,7 +1096,7 @@ class PricePage(tk.Frame):
         # Center frame
         self.EditPriceFrame = tk.Frame(
             self.container, 
-            bg="#ffffff", 
+            bg="#91C4EE", 
             width=600, 
             height=600,
             bd=2, 
@@ -1039,6 +1110,11 @@ class PricePage(tk.Frame):
                    ("Diesel100_Row","diesel100button", "diesel100entry", 4, "Diesel 100L Change Price"),
                    ("Premium100_Row","premium100button", "premium100entry", 5, "Premium 100L Change Price"), 
                    ("Unleaded100_Row","unleaded100button", "unleaded100entry", 6, "Unleaded 100L Change Price")]
+        self.dummy_focus = tk.Frame(self)
+        self.dummy_focus.place(x=0, y=0, width=1, height=1)
+        
+        
+        #Configure centerframe grid
         for r in range(6):
             self.EditPriceFrame.grid_rowconfigure(r, weight=1)
             self.EditPriceFrame.grid_columnconfigure(0, weight=1)
@@ -1047,7 +1123,8 @@ class PricePage(tk.Frame):
             row.grid_propagate(False)
             row_name = self.widgets[r][0]
             setattr(self, row_name, row)
-            
+        
+        #adding widgets to center frame    
         for row_name, buttonname, entryname, button_number, text in self.widgets:
             button = tk.Button(
             getattr(self, row_name),
@@ -1075,7 +1152,7 @@ class PricePage(tk.Frame):
             )
             entry.pack(side='left', fill = 'x', expand = 1, padx=10, pady=5)
             setattr(self, entryname, entry)
-        
+
         # Right frame (east)
         self.Current_100L_Price = tk.Frame(
             self.container, 
@@ -1086,51 +1163,138 @@ class PricePage(tk.Frame):
             relief='solid'
         )
         self.Current_100L_Price.pack(side='left', fill='y', padx=(50, 50), pady=30)
+        self.bind_all("<Button-1>", self.remove_focus)
         
     def Onclick(self, button_number: int, entryname: str):
         getattr(self, entryname).config(state ='normal')
         getattr(self, entryname).focus_set()
         match button_number:
             case 1:
-                print(f"Clicked {button_number}", entryname)
+                #print(f"Clicked {button_number}", entryname)
                 self.clear(entryname)
                 self.disable(entryname)
-                value = float(getattr(self, entryname).get())
-                self.addvalue(value)
+                value = getattr(self, entryname).get()
+                self.getvalue(value, 1)
             case 2:
-                print(f"Clicked {button_number}", entryname)
+                #print(f"Clicked {button_number}", entryname)
                 self.clear(entryname)
                 self.disable(entryname)
+                value = getattr(self, entryname).get()
+                self.getvalue(value, 2)
             case 3:
-                print(f"Clicked {button_number}", entryname)
+                #print(f"Clicked {button_number}", entryname)
                 self.clear(entryname)
                 self.disable(entryname)
+                value = getattr(self, entryname).get()
+                self.getvalue(value, 3)
             case 4:
-                print(f"Clicked {button_number}", entryname)
+                #print(f"Clicked {button_number}", entryname)
                 self.clear(entryname)
                 self.disable(entryname)
+                value = getattr(self, entryname).get()
+                self.getvalue(value, 4)
             case 5:
-                print(f"Clicked {button_number}", entryname)
+                #print(f"Clicked {button_number}", entryname)
                 self.clear(entryname)
                 self.disable(entryname)
+                value = getattr(self, entryname).get()
+                self.getvalue(value, 5)
             case 6:   
-               print(f"Clicked {button_number}", entryname)
-               self.clear(entryname)
-               self.disable(entryname)
+                #print(f"Clicked {button_number}", entryname)
+                self.clear(entryname)
+                self.disable(entryname)
+                value = getattr(self, entryname).get()
+                self.getvalue(value, 6)
             case _: pass
                
-    def clear(self, widget: str):
+    #function to get values
+    def getvalue(self, value: str, number: int):
+        #this is the number assigned to fuel types and its volume
+        '''
+        1 - Diesel
+        2 - Premium
+        3 - Unleaded
+        4 - Diesel100
+        5 - Premium100
+        6 - Unleaded100
+        '''
+        
+        number_id: int = number
+        
+        #try except to add values if they are appropriate and reject if not
+        try:
+            volumechange = float(value)
+            print(f"value of {volumechange} is added")
+            print(type(volumechange))
+            self.clear(None)
+            try:
+                if self.dummy_focus.winfo_exists():
+                    self.dummy_focus.focus_set()
+            except tk.TclError:
+                pass      
+            self.addvalue(volumechange, number_id)
+        except ValueError as e:
+            print(f"{e}")
+    
+    #clear each textbox
+    def clear(self, widget: str | None):
         for textbox in self.widgets: 
             if textbox[2] != widget:
                 getattr(self, textbox[2]).delete(0,tk.END)  
-                  
+     
+    #disable each textbox              
     def disable(self, widget: str):
         for textbox in self.widgets: 
             if textbox[2] != widget:
                 getattr(self, textbox[2]).config(state = 'disabled')  
-                
-    def addvalue(self, value: float):
-        print(f"added value {value}")             
+    
+    #add value to database            
+    def addvalue(self, value: float, number_id: int):
+        #passing values from other function
+        fuel_type_id: int | None = 0
+        Name: str | None = ""
+        price: float | None = value
+        
+        #establishing connection
+        conn = sqlite3.connect('Databases/inventory_db.db')
+        cursor = conn.cursor()
+        
+        match number_id:
+            case 1:
+                fuel_type_id = 1
+                Name = "Diesel"
+            case 2:
+                fuel_type_id = 2
+                Name = "Premium"
+            case 3:
+                fuel_type_id = 3
+                Name = "Unleaded"
+            case 4:
+                fuel_type_id = 1
+                Name = "Diesel100"
+            case 5:
+                fuel_type_id = 2
+                Name = "Premium100"
+            case 6:
+                fuel_type_id = 3
+                Name = "Unleaded100"
+            case _: pass  
+        cursor.execute('''
+                       INSERT INTO price(fuel_type_id, Name, price)
+                       Values(?,?,?)
+                       ''', (fuel_type_id, Name, price))
+        conn.commit()
+        conn.close()
+    
+    #remove focus    
+    def remove_focus(self, event: tk.Event):
+        widget = event.widget
+        if not isinstance(widget, ttk.Entry):
+            try:
+                if self.dummy_focus.winfo_exists():
+                    self.dummy_focus.focus_set()
+            except tk.TclError:
+                pass               
                 
 class DeliveryPage(tk.Frame):
     def __init__(self, parent:tk.Frame):
