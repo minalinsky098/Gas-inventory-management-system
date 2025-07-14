@@ -70,7 +70,7 @@ def setup_database():
         fuel_type_id INTEGER NOT NULL,
         Name Text Not NULL,
         price REAL NOT NULL, 
-        effective_date DATETIME DEFAULT CURRENT_TIMESTAMP,
+        effective_date TEXT DEFAULT (strftime('%m-%d-%Y', 'now')),
         FOREIGN KEY (fuel_type_id) REFERENCES fuel_type(fuel_type_id)
         )
         '''
@@ -1024,7 +1024,7 @@ class TransactionsPage(tk.Frame):
     def __init__(self, parent: tk.Frame):
         super().__init__(parent, bg='white')
         
-        #Tree table
+        #Tree style
         style:ttk.Style = ttk.Style()
         style.theme_use('alt')
         style.configure("Custom.Treeview", #type: ignore
@@ -1033,7 +1033,10 @@ class TransactionsPage(tk.Frame):
                         rowheight=25,
                         fieldbackground="white") 
         
+        #setting columns
         columns = ('Pump Label', 'Fuel_type', 'Volume(Liters)', 'Price(Pesos)', 'Date(MM/DD/YY)')
+        
+        #Make tree
         tree = ttk.Treeview(self, columns=columns, show='headings', style= "Custom.Treeview")
         for col in columns:
             tree.heading(col, text=col, anchor='w')
@@ -1083,26 +1086,66 @@ class PricePage(tk.Frame):
         self.container.pack(fill='both', expand=True)
         
         # Left frame (west)
-        self.Current_Liter_Price = tk.Frame(
-            self.container, 
-            bg="#ffffff", 
-            width=300, 
-            height=600,
-            bd=2, 
-            relief='solid'
-        )
+        self.Current_Liter_Price = tk.Frame(self.container, bg="#ffffff", width=300, height=600,bd=2, relief='solid')
         self.Current_Liter_Price.pack(side='left', fill='y', padx=(50, 50), pady=30)
         
+        self.tree_frame = tk.Frame(self.Current_Liter_Price, bg="#c1c9cb")
+        self.tree_frame.pack(fill='both', expand=True)
+    
+        self.style:ttk.Style = ttk.Style()
+        self.style.theme_use('alt')
+        self.style.configure("Custom.Treeview", #type: ignore
+                        background="white",
+                        foreground="black",
+                        rowheight=25,
+                        fieldbackground="white") 
+
+        #setup columns
+        self.columns = ('Fuel_type', 'Price', 'Effective_Date')
+        
+        # Create Treeview
+        self.price_tree = ttk.Treeview(
+            self.tree_frame,
+            columns = self.columns,
+            selectmode='browse',
+            show='headings',
+            height=15,
+            style = "Custom.Treeview",
+        )
+        for col in self.columns:
+            self.price_tree.heading(col, text=col, anchor='w')
+            self.price_tree.column(col, anchor='w', width=100)
+        self.price_tree.pack(side='left', fill='y', expand=True, padx =5, pady = 5)
+        
+        self.tree_scroll = ttk.Scrollbar(self.tree_frame, orient='vertical', command= self.price_tree.yview)# type: ignore
+        self.price_tree.configure(yscroll= self.tree_scroll.set)# type: ignore
+        self.tree_scroll.pack(side='left', fill='y')        
+    
+        self.style.map('Custom.Treeview', background=[('selected', "#627595")])#type: ignore
+        
+        self.refresh()
+        
+        self.price_tree.tag_configure('Diesel', background="#c6ccc6")
+        self.price_tree.tag_configure('Premium', background="#949994")
+        self.price_tree.tag_configure('Unleaded', background="#797D79")
+        
+        
+        #============================================================================================================
         # Center frame
         self.EditPriceFrame = tk.Frame(
             self.container, 
-            bg="#91C4EE", 
-            width=600, 
+            bg="#3498db", 
+            width=650, 
             height=600,
-            bd=2, 
-            relief='solid'
-        )
-        self.EditPriceFrame.pack(side='left', fill='both',expand = True, padx=20, pady=30)
+            bd=0,
+            relief='flat',
+            highlightthickness=1,
+            highlightbackground="#D1E0FF",
+            highlightcolor="#D1E0FF",
+            padx=15,
+            pady=15
+            )
+        self.EditPriceFrame.pack(side='left', fill='both', expand=True, padx=(0, 20), pady=30)
         
         self.widgets = [("Diesel_Norm_Row","dieselnorm_button", "dieselnormentry", 1, "Diesel Change Price"), 
                    ("Premium_Norm_Row","premiumnorm_button", "premiumnormentry", 2, "Premium Change Price"), 
@@ -1113,44 +1156,73 @@ class PricePage(tk.Frame):
         self.dummy_focus = tk.Frame(self)
         self.dummy_focus.place(x=0, y=0, width=1, height=1)
         
-        
-        #Configure centerframe grid
+    
+        # Configure grid layout with better spacing
         for r in range(6):
             self.EditPriceFrame.grid_rowconfigure(r, weight=1)
             self.EditPriceFrame.grid_columnconfigure(0, weight=1)
-            row = tk.Frame(self.EditPriceFrame, bg = "#148DD9", bd = 2, relief = 'solid')
-            row.grid(row = r, column= 0,sticky="nsew",padx =5, pady = 2)
+            # Modern card-like row design
+            row = tk.Frame(
+                self.EditPriceFrame, 
+                bg="#ecf0f1", 
+                bd=0,
+                highlightthickness=1,
+                highlightbackground="#F0F5FF",
+                highlightcolor="#F0F5FF",
+                padx=10,
+                pady=5
+            )
+            row.grid(row=r, column=0, sticky="nsew", padx=5, pady=8)
             row.grid_propagate(False)
             row_name = self.widgets[r][0]
             setattr(self, row_name, row)
-        
-        #adding widgets to center frame    
+    
+        # Styled button and entry widgets
         for row_name, buttonname, entryname, button_number, text in self.widgets:
+            # Modern button design
             button = tk.Button(
             getattr(self, row_name),
             text=text,
-            compound='left',
-            bg="#70818c", 
+            bg="#4A7EFF", 
             fg='white',
-            font=("Segoe UI", 10, "bold"),
-            bd=4,
-            command = lambda n = button_number: self.Onclick(n, self.widgets[n-1][2]),
-            padx=10,
-            pady=5,
-            relief='raised',
+            font=("Segoe UI", 11, "bold"),
+            bd=0,
+            command=lambda n=button_number: self.Onclick(n, self.widgets[n-1][2]),
+            padx=15,
+            pady=8,
+            relief='flat',
             cursor="hand2",
-            activebackground="#4f5a62",
-            height = 2,
-            )
-            button.pack(side='left', fill = 'x', expand = 1, padx=10, pady=5)
+            activebackground="#3460CC",
+            activeforeground="white",
+            height=1,
+            width=20
+        )
+            button.pack(side='left', fill='y', padx=(10, 5), pady=10)
             setattr(self, buttonname, button)
+        
+            # Modern entry design
             entry = ttk.Entry(
-            getattr(self, row_name),
-            width=20, 
-            font=("Comic Sans MS", 20),
-            state = 'disabled'
+                getattr(self, row_name),
+                width=15,
+                font=("Segoe UI", 14),
+                state='disabled',
+                justify='center'
             )
-            entry.pack(side='left', fill = 'x', expand = 1, padx=10, pady=5)
+            # Style configuration for entry
+            style = ttk.Style()
+            style.configure("Modern.TEntry", #type: ignore
+                        fieldbackground="#F8FAFF", 
+                        foreground="#333333",
+                        bordercolor="#D1E0FF",
+                        lightcolor="#D1E0FF",
+                        darkcolor="#D1E0FF",
+                        padding=(10, 8, 10, 8))
+            style.map("Modern.TEntry", #type: ignore
+                 fieldbackground=[("disabled", "#F8FAFF")],
+                 foreground=[("disabled", "#4A4A4A")])
+        
+            entry.configure(style="Modern.TEntry")
+            entry.pack(side='right', fill='both', expand=True, padx=(5, 15), pady=10)
             setattr(self, entryname, entry)
 
         # Right frame (east)
@@ -1163,8 +1235,94 @@ class PricePage(tk.Frame):
             relief='solid'
         )
         self.Current_100L_Price.pack(side='left', fill='y', padx=(50, 50), pady=30)
-        self.bind_all("<Button-1>", self.remove_focus)
         
+        self.tree100_frame = tk.Frame(self.Current_100L_Price, bg="#c1c9cb")
+        self.tree100_frame.pack(fill='both', expand=True)
+        
+        self.columns100 = ('Fuel_type', 'Price', 'Effective_Date')
+        # Create Treeview
+        self.price100_tree = ttk.Treeview(
+            self.tree100_frame,
+            columns = self.columns,
+            selectmode='browse',
+            show='headings',
+            height=15,
+            style = "Custom.Treeview",
+        )
+        for col in self.columns100:
+            self.price100_tree.heading(col, text=col, anchor='w')
+            self.price100_tree.column(col, anchor='w', width=100)
+        self.price100_tree.pack(side='left', fill='y', expand=True, padx =5, pady = 5)
+        
+        self.tree100_scroll = ttk.Scrollbar(self.tree100_frame, orient='vertical', command= self.price100_tree.yview)# type: ignore
+        self.price100_tree.configure(yscroll= self.tree100_scroll.set)# type: ignore
+        self.tree100_scroll.pack(side='left', fill='y')        
+    
+        self.style.map('Custom.Treeview', background=[('selected', "#627595")])#type: ignore
+        
+        self.refresh100()
+        
+        self.price100_tree.tag_configure('Diesel100', background="#c6ccc6")
+        self.price100_tree.tag_configure('Premium100', background="#949994")
+        self.price100_tree.tag_configure('Unleaded100', background="#797D79")
+        
+        self.bind_all("<Button-1>", self.remove_focus)
+    
+    def refresh100(self):
+        for item in self.price100_tree.get_children():
+            self.price100_tree.delete(item)
+            
+        connect = sqlite3.connect('Databases/inventory_db.db')
+        cursor = connect.cursor()
+        cursor.execute('''SELECT 
+                       Name,
+                       price,
+                       effective_date
+                       FROM price
+                       WHERE Name IN ('Diesel100', 'Premium100', 'Unleaded100')
+                       ORDER by Name ASC, price_id DESC
+                       ''')
+        rows = cursor.fetchall()
+        for i, values in enumerate(rows):
+            if rows[i][0] == "Diesel100":
+                tag = 'Diesel100'
+            elif rows[i][0] == "Premium100":
+                tag = 'Premium100'
+            elif rows[i][0] == "Unleaded100":
+                tag = 'Unleaded100'
+            else:
+                tag = "Lol"
+            self.price100_tree.insert('', 'end', values=values, tags=(tag,))  
+        connect.close()
+    
+    def refresh(self):
+        for item in self.price_tree.get_children():
+            self.price_tree.delete(item)
+            
+        connect = sqlite3.connect('Databases/inventory_db.db')
+        cursor = connect.cursor()
+        cursor.execute('''SELECT 
+                       Name,
+                       price,
+                       effective_date
+                       FROM price
+                       WHERE Name IN ('Diesel', 'Premium', 'Unleaded')
+                       ORDER by Name ASC, price_id DESC
+                       ''')
+        rows = cursor.fetchall()
+        for i, values in enumerate(rows):
+            if rows[i][0] == "Diesel":
+                tag = 'Diesel'
+            elif rows[i][0] == "Premium":
+                tag = 'Premium'
+            elif rows[i][0] == "Unleaded":
+                tag = 'Unleaded'
+            else:
+                tag = "Lol"
+            self.price_tree.insert('', 'end', values=values, tags=(tag,))  
+        connect.close()
+    
+    # Functionality when buttons are clicked    
     def Onclick(self, button_number: int, entryname: str):
         getattr(self, entryname).config(state ='normal')
         getattr(self, entryname).focus_set()
@@ -1285,6 +1443,8 @@ class PricePage(tk.Frame):
                        ''', (fuel_type_id, Name, price))
         conn.commit()
         conn.close()
+        self.refresh()
+        self.refresh100()
     
     #remove focus    
     def remove_focus(self, event: tk.Event):
