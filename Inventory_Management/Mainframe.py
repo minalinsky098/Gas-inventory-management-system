@@ -4,8 +4,10 @@ from tkinter import messagebox, simpledialog, ttk
 import datetime
 import sqlite3
 import hashlib
+from typing import Dict, Union, cast, Type, TypeVar, Any
+T = TypeVar('T', bound=tk.Frame)
 
-def hash_password(password):
+def hash_password(password: str):
     return hashlib.sha256(password.encode()).hexdigest()
 
 def setup_database():
@@ -65,10 +67,11 @@ def setup_database():
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS price(
         price_id INTEGER PRIMARY KEY AUTOINCREMENT,
-        pump_id INTEGER NOT NULL,
-        price INTEGER NOT NULL, 
-        effective_date DATETIME DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (pump_id) REFERENCES pump(pump_id)
+        fuel_type_id INTEGER NOT NULL,
+        Name Text Not NULL,
+        price REAL NOT NULL, 
+        effective_date TEXT DEFAULT (strftime('%m-%d-%Y', 'now')),
+        FOREIGN KEY (fuel_type_id) REFERENCES fuel_type(fuel_type_id)
         )
         '''
     )
@@ -95,8 +98,7 @@ def setup_database():
     
     #new admin setup
     cursor.execute('SELECT COUNT(*) FROM users')
-    if cursor.fetchone()[0] == 0:
-        
+    if cursor.fetchone()[0] == 0: 
         root = tk.Tk()
         root.withdraw()  
         new_admin_password = None
@@ -115,11 +117,47 @@ def setup_database():
             ('user123', hash_password('qwertyuiop'))  #employee user setup
         )
         root.destroy()
+        
+    #setup prices initally
+    cursor.execute('SELECT COUNT(*) FROM price')
+    if cursor.fetchone()[0] == 0:
+        dieselprice = simpledialog.askfloat(
+                "Set Diesel Price",
+                "Enter price per liter of diesel:",
+            )
+        cursor.execute('INSERT INTO price(fuel_type_id, price, Name) VALUES (?,?,?)', (1,dieselprice,'Diesel',))
+        diesel100price = simpledialog.askfloat(
+                "Set Diesel100 Price",
+                "Enter price per 100 liters of diesel:",
+            )
+        cursor.execute('INSERT INTO price(fuel_type_id, price, Name) VALUES (?,?,?)', (1,diesel100price,'Diesel100',))
+        
+        premiumprice = simpledialog.askfloat(
+                "Set Premium Price",
+                "Enter price per liter of premium:",
+            )
+        cursor.execute('INSERT INTO price(fuel_type_id, price, Name) VALUES (?,?,?)', (2,premiumprice,'Premium',))
+        premium100price = simpledialog.askfloat(
+                "Set Premium100 Price",
+                "Enter price per 100 liters of premium:",
+            )
+        cursor.execute('INSERT INTO price(fuel_type_id, price, Name) VALUES (?,?,?)', (2,premium100price,'Premium100',))
+        
+        unleadedprice = simpledialog.askfloat(
+                "Set Unleaded Price",
+                "Enter price per liter of Unleaded:",
+            )
+        cursor.execute('INSERT INTO price(fuel_type_id, price, Name) VALUES (?,?,?)', (3,unleadedprice,'Unleaded',))
+        unleaded100price = simpledialog.askfloat(
+                "Set Unleaded100 Price",
+                "Enter price per 100 liters of Unleaded:",
+            )
+        cursor.execute('INSERT INTO price(fuel_type_id, price, Name) VALUES (?,?,?)', (3,unleaded100price,'Unleaded100',))
 
     conn.commit()
     conn.close()
 
-def check_login(username, password):
+def check_login(username: str, password: str):
     conn = sqlite3.connect('Databases/inventory_db.db')
     cursor = conn.cursor()
     cursor.execute('SELECT user_id, password_hash FROM users WHERE username=?', (username,))
@@ -155,7 +193,7 @@ class ProjectFrame(tk.Tk):
         self.protocol("WM_DELETE_WINDOW", self.on_closing)  # Handle close event
         self.minsize(1200, 600)
         self.state('zoomed')  # Start maximized
-        self.frames = {}
+        self.frames: Dict[str, Union[LoginPage, HomePage]] = {}
         self.setup_frames()
         self.show_frame("LoginPage")
 
@@ -165,7 +203,7 @@ class ProjectFrame(tk.Tk):
         for frame in self.frames.values():
             frame.place(relwidth=1, relheight=1)
  
-    def show_frame(self, name, role = None, user_id = None):
+    def show_frame(self, name : str, role: str | None = None, user_id: int | None = None):
         for frame in self.frames.values():
             frame.place_forget()
                 
@@ -176,23 +214,24 @@ class ProjectFrame(tk.Tk):
         self.frames[name].place(relwidth=1, relheight=1)
         self.homepage = self.frames.get("HomePage")
         if name == "LoginPage":
-            self.frames[name].bind_enter()
+            login_frame = cast(LoginPage, self.frames[name])
+            login_frame.bind_enter()
         
     # Error message when shift is active
     def on_closing(self):
         if self.shift_started:
-            messagebox.showwarning("Action Blocked", "You cannot exit the program while logged in. Please logout first.")
-            self.homepage.show_content(DefaultPage, userlogin = True)
+            messagebox.showwarning("Action Blocked", "You cannot exit the program while logged in. Please logout first.") # type: ignore
+            self.homepage.show_content(DefaultPage, userlogin = True) # type: ignore
         else:
             self.destroy()
 
 class LoginPage(tk.Frame):
-    def __init__(self, parent, controller):
+    def __init__(self, parent: tk.Tk, controller: ProjectFrame):
         super().__init__(parent)
         self.controller = controller
         
         # Modern color scheme
-        self.login_icon = ImageTk.PhotoImage(Image.open("images/login.png").resize((108, 108)))
+        self.login_icon = ImageTk.PhotoImage(Image.open("images/login.png").resize((108, 108))) # type:ignore
         self.bg_color = '#2c3e50'  # Dark blue
         self.primary_color = '#3498db'  # Bright blue
         self.secondary_color = '#2980b9'  # Darker blue
@@ -367,26 +406,26 @@ class LoginPage(tk.Frame):
                 role = "admin"
             else:
                 role = "user"
-            messagebox.showinfo(f"Access granted!!",f"Welcome, {username}!")
+            messagebox.showinfo(f"Access granted!!",f"Welcome, {username}!") #type: ignore
             self.unbind_enter()
-            self.controller.show_frame("HomePage", role = role, user_id = user_id)  # Example: switch to another frame
+            self.controller.show_frame("HomePage", role = role, user_id = user_id)  
         else:
-            messagebox.showerror("Access denied", "Invalid username or password.")
+            messagebox.showerror("Access denied", "Invalid username or password.") #type: ignore
         self.usernametextbox.delete(0, tk.END)
         self.passwordtextbox.delete(0, tk.END)
         self.usernametextbox.focus_set()
 
 class HomePage(tk.Frame):
-    def __init__(self, parent, controller, role, user_id):
+    def __init__(self, parent: tk.Tk, controller: ProjectFrame, role: str | None, user_id: int |None):
         
-        self.shift_icon = ImageTk.PhotoImage(Image.open("images/shift.png").resize((24, 24)))
-        self.income_icon = ImageTk.PhotoImage(Image.open("images/income.png").resize((24, 24)))
-        self.price_icon = ImageTk.PhotoImage(Image.open("images/price.png").resize((24, 24)))
-        self.delivery_icon = ImageTk.PhotoImage(Image.open("images/delivery.png").resize((24, 24)))
-        self.inventory_icon = ImageTk.PhotoImage(Image.open("images/inventory.png").resize((24, 24)))
-        self.transactions_icon = ImageTk.PhotoImage(Image.open("images/transaction.png").resize((24, 24)))
-        self.logout_icon = ImageTk.PhotoImage(Image.open("images/logout.png").resize((24, 24)))
-        self.login_icon = ImageTk.PhotoImage(Image.open("images/login.png").resize((36, 36)))
+        self.shift_icon = ImageTk.PhotoImage(Image.open("images/shift.png").resize((24, 24)))#type: ignore
+        self.income_icon = ImageTk.PhotoImage(Image.open("images/income.png").resize((24, 24)))#type: ignore
+        self.price_icon = ImageTk.PhotoImage(Image.open("images/price.png").resize((24, 24)))#type: ignore
+        self.delivery_icon = ImageTk.PhotoImage(Image.open("images/delivery.png").resize((24, 24)))#type: ignore
+        self.inventory_icon = ImageTk.PhotoImage(Image.open("images/inventory.png").resize((24, 24)))#type: ignore
+        self.transactions_icon = ImageTk.PhotoImage(Image.open("images/transaction.png").resize((24, 24)))#type: ignore
+        self.logout_icon = ImageTk.PhotoImage(Image.open("images/logout.png").resize((24, 24)))#type: ignore
+        self.login_icon = ImageTk.PhotoImage(Image.open("images/login.png").resize((36, 36)))#type: ignore
         
         #navigation buttons 
         self.buttons = [
@@ -456,12 +495,12 @@ class HomePage(tk.Frame):
         # Shadow effect of the maincontent area
         shadow = tk.Frame(self, bg="#b5b7bb", bd=0)
         shadow.place(in_=self.main_content, relx=0, rely=0, x=-4, y=-4, relwidth=1, relheight=1, width=8, height=8)
-        self.main_content.lift() 
+        self.main_content.lift()  # type: ignore
         
         self.show_content(DefaultPage, userlogin = False)
 
     # Admin navigation bar method
-    def navbar(self, parent_frame):
+    def navbar(self, parent_frame: tk.Frame):
         # Create modern styled buttons for user role without changing names
         for text, icon, cmd in self.buttons:
             if self.role == "user" and text not in ["Start Shift", "Logout"]:
@@ -505,8 +544,8 @@ class HomePage(tk.Frame):
             cursor.execute('''INSERT INTO shift(user_id, shift_date, shift_type, shift_start_time) 
                 VALUES (?, ?, ?, ?)''',(user_id, shift_date, shift_type, timenow))
             conn.commit()  
-            messagebox.showinfo("Start Shift", f"{shift_type} Shift started successfully at {timenow}")
-            self.shift_button.config(text="End Shift")
+            messagebox.showinfo("Start Shift", f"{shift_type} Shift started successfully at {timenow}")#type: ignore
+            getattr(self, "shift_button").config(text ="End Shift")
             self.shift_started = True  
             self.controller.shift_started = True 
             self.show_content(DefaultPage, userlogin = True)
@@ -517,17 +556,17 @@ class HomePage(tk.Frame):
                 shift_id = row[0]
                 cursor.execute('UPDATE shift SET shift_end_time = ? WHERE shift_id = ?', (timenow, shift_id))
                 conn.commit()
-            messagebox.showinfo("End shift",f"{shift_type} Shift ended at {timenow}")
-            self.shift_button.config(text="Start Shift")
+            messagebox.showinfo("End shift",f"{shift_type} Shift ended at {timenow}")#type: ignore
+            getattr(self, "shift_button").config(text ="Start Shift")
             self.shift_started = False
             self.controller.shift_started = False
             self.show_content(DefaultPage, userlogin = False)
         conn.close()
     
     # Method to handle button clicks 
-    def Onclick(self, number):
-        def income_report(time_period):
-            messagebox.showinfo("Income Report", "Income report generated successfully!")
+    def Onclick(self, number: int):
+        def income_report(time_period: str):
+            messagebox.showinfo("Income Report", "Income report generated successfully!")#type: ignore
             self.show_content(IncomePage)
         match number:
             case 1:
@@ -549,14 +588,16 @@ class HomePage(tk.Frame):
                 self.show_content(TransactionsPage)
             case 7:
                 if self.controller.shift_started:
-                    messagebox.showwarning("Action Blocked", "You cannot logout while a shift is active. Please end the shift first.")
+                    messagebox.showwarning("Action Blocked", "You cannot logout while a shift is active. Please end the shift first.")#type: ignore
                     self.show_content(DefaultPage, userlogin = True)
                 else:
-                    if messagebox.askyesno("Logout", "Are you sure you want to logout?"):
+                    if messagebox.askyesno("Logout", "Are you sure you want to logout?"): #type: ignore
                         self.controller.show_frame("LoginPage")  
+            case _:
+                pass
     
     #method for switching frames when buttons are clicked                
-    def show_content(self, PageClass, *args, **kwargs):
+    def show_content(self, PageClass: Type[T], *args: Any, **kwargs: Any)-> None:
         if self.current_page:
             self.current_page.destroy()
         if PageClass == DefaultPage:
@@ -565,15 +606,15 @@ class HomePage(tk.Frame):
         self.current_page.pack(fill='both', expand=True)
         
 class DefaultPage(tk.Frame):
-    def __init__(self, parent, userlogin = False, user_id = None):
+    def __init__(self, parent: tk.Frame, userlogin: bool = False, user_id: int | None = None):
         super().__init__(parent, bg='#91C4EE')
         
-        self.diesel1_icon = ImageTk.PhotoImage(Image.open("images/diesel_1.png").resize((48, 48)))
-        self.diesel2_icon = ImageTk.PhotoImage(Image.open("images/diesel_2.png").resize((48, 48)))
-        self.premium1_icon = ImageTk.PhotoImage(Image.open("images/premium_1.png").resize((48, 48)))
-        self.premium2_icon = ImageTk.PhotoImage(Image.open("images/premium_2.png").resize((48, 48)))
-        self.premium3_icon = ImageTk.PhotoImage(Image.open("images/premium_3.png").resize((48, 48)))
-        self.unleaded_icon = ImageTk.PhotoImage(Image.open("images/unleaded.png").resize((48, 48)))
+        self.diesel1_icon = ImageTk.PhotoImage(Image.open("images/diesel_1.png").resize((48, 48)))#type: ignore
+        self.diesel2_icon = ImageTk.PhotoImage(Image.open("images/diesel_2.png").resize((48, 48)))#type: ignore
+        self.premium1_icon = ImageTk.PhotoImage(Image.open("images/premium_1.png").resize((48, 48)))#type: ignore
+        self.premium2_icon = ImageTk.PhotoImage(Image.open("images/premium_2.png").resize((48, 48)))#type: ignore
+        self.premium3_icon = ImageTk.PhotoImage(Image.open("images/premium_3.png").resize((48, 48)))#type: ignore
+        self.unleaded_icon = ImageTk.PhotoImage(Image.open("images/unleaded.png").resize((48, 48)))#type: ignore
         
         self.userlogin = userlogin
         self.user_id = user_id
@@ -639,7 +680,7 @@ class DefaultPage(tk.Frame):
                     padx=10,
                     pady=5,
                     relief='raised',
-                    command=lambda n = cmd_num: self.Onclick(n),
+                    command=lambda n = cmd_num: self.Onclick(n, self.widget_configs[n-1][5]),
                     cursor="hand2",
                     activebackground="#4f5a62",
                     state = "disabled",
@@ -668,7 +709,7 @@ class DefaultPage(tk.Frame):
             price_txbx.pack(anchor='center', padx= 10, pady= 5)
             setattr(self, button_name, button)
             setattr(self, volume_textbox, volumetxbx)
-            getattr(self, volume_textbox).bind('<KeyRelease>', lambda e, n=cmd_num: self.update_price(n))
+            getattr(self, volume_textbox).bind('<KeyRelease>', lambda e, n=cmd_num: self.update_price(n, self.widget_configs[n-1][5],self.widget_configs[n-1][6]))#type: ignore
             setattr(self, price_texbox, price_txbx)
             
         # Container frame on bottom left square
@@ -753,74 +794,93 @@ class DefaultPage(tk.Frame):
                 getattr(self, textbox[6]).delete(0,tk.END)
     
     #This method calculates the price based on the volume entered in the corresponding textbox
-    def update_price(self, number):
+    def update_price(self, number: int, volumeboxname: str, priceboxname: str):
+        price_per_liter: float = 0
+        conn = sqlite3.connect('Databases/inventory_db.db')
+        cursor = conn.cursor()
         match number:
-            case 1:
+            case 1 | 2:
                 try:
-                    volume = float(self.diesel1_volume_textbox.get())
-                    price = volume *50
+                    volume = float(getattr(self, volumeboxname).get())
+                    cursor.execute('SELECT COUNT(*) FROM fuel_type')
+                    if volume < 100:
+                        cursor.execute('''
+                               SELECT price from price 
+                               WHERE fuel_type_id = ?
+                               AND Name = ?
+                               ORDER BY price_id DESC
+                               LIMIT 1
+                               ''',(1,"Diesel",))
+                    else:
+                        cursor.execute('''
+                               SELECT price from price 
+                               WHERE fuel_type_id = ?
+                               AND Name = ?
+                               ORDER BY price_id DESC
+                               LIMIT 1
+                               ''',(1,"Diesel100",))
+                    price_row = cursor.fetchone()
+                    price_per_liter = price_row[0]
+                    price = volume *price_per_liter
                     price_str = f"{price:.2f}"
-                except ValueError:
+                except Exception as e: #type: ignore
                     price_str = ""
-                self.diesel1_price_textbox.config(state="normal")
-                self.diesel1_price_textbox.delete(0, tk.END)
-                self.diesel1_price_textbox.insert(0, price_str)
-                self.diesel1_price_textbox.config(state="disabled")
-            case 2:
+                self.clearbox(priceboxname, price_str)
+            case 3 | 4 | 5:
                 try:
-                    volume = float(self.diesel2_volume_textbox.get())
-                    price = volume *50
+                    volume = float(getattr(self, volumeboxname).get())
+                    if volume < 100:
+                        cursor.execute('''
+                               SELECT price from price 
+                               WHERE fuel_type_id = ?
+                               AND Name = ?
+                               ORDER BY price_id DESC
+                               LIMIT 1
+                               ''',(2,"Premium",))
+                    else:
+                        cursor.execute('''
+                               SELECT price from price 
+                               WHERE fuel_type_id = ?
+                               AND Name = ?
+                               ORDER BY price_id DESC
+                               LIMIT 1
+                               ''',(2,"Premium100",))
+                    price_row = cursor.fetchone()
+                    price_per_liter = price_row[0]
+                    price = volume *price_per_liter
                     price_str = f"{price:.2f}"
-                except ValueError:
+                except Exception as e: #type: ignore
                     price_str = ""
-                self.diesel2_price_textbox.config(state="normal")
-                self.diesel2_price_textbox.delete(0, tk.END)
-                self.diesel2_price_textbox.insert(0, price_str)
-                self.diesel2_price_textbox.config(state="disabled") 
-            case 3:
-                try:
-                    volume = float(self.premium1_volume_textbox.get())
-                    price = volume *50
-                    price_str = f"{price:.2f}"
-                except ValueError:
-                    price_str = ""
-                self.premium1_price_textbox.config(state="normal")
-                self.premium1_price_textbox.delete(0, tk.END)
-                self.premium1_price_textbox.insert(0, price_str)
-                self.premium1_price_textbox.config(state="disabled")  
-            case 4:
-                try:
-                    volume = float(self.premium2_volume_textbox.get())
-                    price = volume *50
-                    price_str = f"{price:.2f}"
-                except ValueError:
-                    price_str = ""
-                self.premium2_price_textbox.config(state="normal")
-                self.premium2_price_textbox.delete(0, tk.END)
-                self.premium2_price_textbox.insert(0, price_str)
-                self.premium2_price_textbox.config(state="disabled")  
-            case 5:
-                try:
-                    volume = float(self.premium3_volume_textbox.get())
-                    price = volume *50
-                    price_str = f"{price:.2f}"
-                except ValueError:
-                    price_str = ""
-                self.premium3_price_textbox.config(state="normal")
-                self.premium3_price_textbox.delete(0, tk.END)
-                self.premium3_price_textbox.insert(0, price_str)
-                self.premium3_price_textbox.config(state="disabled")
+                self.clearbox(priceboxname, price_str)
             case 6:
                 try:
-                    volume = float(self.unleaded_volume_textbox.get())
-                    price = volume *50
+                    volume = float(getattr(self, volumeboxname).get())
+                    if volume < 100:
+                        cursor.execute('''
+                               SELECT price from price 
+                               WHERE fuel_type_id = ?
+                               AND Name = ?
+                               ORDER BY price_id DESC
+                               LIMIT 1
+                               ''',(3,"Unleaded",))
+                    else:
+                        cursor.execute('''
+                               SELECT price from price 
+                               WHERE fuel_type_id = ?
+                               AND Name = ?
+                               ORDER BY price_id DESC
+                               LIMIT 1
+                               ''',(3,"Unleaded100",))
+                    price_row = cursor.fetchone()
+                    price_per_liter = price_row[0]
+                    price = volume *price_per_liter
                     price_str = f"{price:.2f}"
-                except ValueError:
+                except Exception as e: #type: ignore
                     price_str = ""
-                self.unleaded_price_textbox.config(state="normal")
-                self.unleaded_price_textbox.delete(0, tk.END)
-                self.unleaded_price_textbox.insert(0, price_str)
-                self.unleaded_price_textbox.config(state="disabled")    
+                self.clearbox(priceboxname, price_str)
+            case _: pass
+        conn.commit()
+        conn.close()
     
     # Method to handle transaction submissions       
     def submit(self):
@@ -828,24 +888,24 @@ class DefaultPage(tk.Frame):
             volume_entry = getattr(self, config[5])
             price_entry = getattr(self, config[6])
             if str(volume_entry['state']) == 'normal':
-                print(f"Transaction of: {config[3]}")
+                #print(f"Transaction of: {config[3]}")
                 try:
                     volume_value = float(getattr(self, config[5]).get())
                     price_value = price_entry.get()
-                    answer = messagebox.askokcancel("Transaction Confirmation", 
+                    answer = messagebox.askokcancel("Transaction Confirmation", #type: ignore
                             "Are you sure all the information entered is correct") 
                     if answer:
-                        print(f"Enabled: {config[3]}, Volume: {volume_value}, Price: {price_value}")
+                        #print(f"Enabled: {config[3]}, Volume: {volume_value}, Price: {price_value}")
                         conn = sqlite3.connect('Databases/inventory_db.db')
                         cursor = conn.cursor()
                         pump_label = config[3]
-                        print(pump_label)
+                        #print(pump_label)
                         pump_id_row = cursor.execute("SELECT pump_id FROM pump WHERE pump_label = ?", (pump_label,)).fetchone()
                         pump_id = pump_id_row[0]
-                        print(pump_id)
+                        #print(pump_id)
                         shift_id_row = cursor.execute("Select shift_id FROM shift ORDER BY shift_id DESC LIMIT 1").fetchone()
                         shift_id = shift_id_row[0]
-                        print(shift_id)
+                        #print(shift_id)
                         cursor.execute('''
                                        INSERT INTO transactions(shift_id, pump_id, volume, price)
                                        Values(?,?,?,?)
@@ -853,13 +913,20 @@ class DefaultPage(tk.Frame):
                         conn.commit()
                         conn.close()
                 except ValueError: 
-                    print(f"Invalid input in {config[3]}. Please enter numeric values.")
-                    messagebox.showinfo("Input Error", f"Please enter the correct inputs in {config[3]}.")
+                    #print(f"Invalid input in {config[3]}. Please enter numeric values.")
+                    messagebox.showinfo("Input Error", f"Please enter the correct inputs in {config[3]}.")#type: ignore
             else:
                 continue
                     
                 # You can now use volume_value and price_value as needed
             self.clear()
+    
+    # Method to clear selected textbox
+    def clearbox(self, textboxname: str, price: str):
+        getattr(self, textboxname).config(state = "normal")
+        getattr(self, textboxname).delete(0, tk.END)
+        getattr(self, textboxname).insert(0, price)
+        getattr(self, textboxname).config(state = "disabled")
     
     # Method to clear all textboxes
     def clear(self):
@@ -870,56 +937,33 @@ class DefaultPage(tk.Frame):
             getattr(self, textbox[6]).config(state="disabled")                 
     
     #Method to handle button clicks TBR      
-    def Onclick(self, button_number):
+    def Onclick(self, button_number: int, entryname: str):
+        self.clear()
         match button_number:
             case 1:
-                print("Diesel 1 clicked")
-                self.clear()
-                self.diesel1_volume_textbox.config(state = "normal")
-                self.diesel1_volume_textbox.focus_set()
-                for textbox in self.widget_configs:
-                    if textbox[5] != "diesel1_volume_textbox":
-                        getattr(self, textbox[5]).config(state = "disabled")
+                #print("Diesel 1 clicked")
+                self.activatetextbox(entryname)
+                
             case 2:
-                print("Diesel 2 clicked")
-                self.clear()
-                self.diesel2_volume_textbox.config(state = "normal")
-                self.diesel2_volume_textbox.focus_set()
-                for textbox in self.widget_configs:
-                    if textbox[5] != "diesel2_volume_textbox":
-                        getattr(self, textbox[5]).config(state = "disabled")
+                #print("Diesel 2 clicked")
+                self.activatetextbox(entryname)
+
             case 3:
-                print("Premium 1 clicked")
-                self.clear()
-                self.premium1_volume_textbox.config(state = "normal")
-                self.premium1_volume_textbox.focus_set()
-                for textbox in self.widget_configs:
-                    if textbox[5] != "premium1_volume_textbox":
-                        getattr(self, textbox[5]).config(state = "disabled")
+                #print("Premium 1 clicked")
+                self.activatetextbox(entryname)
+
             case 4:
-                print("Premium 2 clicked")
-                self.clear()
-                self.premium2_volume_textbox.config(state = "normal")
-                self.premium2_volume_textbox.focus_set()
-                for textbox in self.widget_configs:
-                    if textbox[5] != "premium2_volume_textbox":
-                        getattr(self, textbox[5]).config(state = "disabled")
+                #print("Premium 2 clicked")
+                self.activatetextbox(entryname)
+
             case 5:
-                print("Premium 3 clicked")
-                self.clear()
-                self.premium3_volume_textbox.config(state = "normal")
-                self.premium3_volume_textbox.focus_set()
-                for textbox in self.widget_configs:
-                    if textbox[5] != "premium3_volume_textbox":
-                        getattr(self, textbox[5]).config(state = "disabled")
+                #print("Premium 3 clicked")
+                self.activatetextbox(entryname)
+
             case 6:
-                print("Unleaded clicked")  
-                self.clear()
-                self.unleaded_volume_textbox.config(state = "normal")
-                self.unleaded_volume_textbox.focus_set()
-                for textbox in self.widget_configs:
-                    if textbox[5] != "unleaded_volume_textbox":
-                        getattr(self, textbox[5]).config(state = "disabled")
+                #print("Unleaded clicked")  
+                self.activatetextbox(entryname)
+            case _: pass
      
     #Bottom right corner clock and date label   
     def updateclock(self):
@@ -936,7 +980,6 @@ class DefaultPage(tk.Frame):
         last_logout_time = "N/A"
         cursor.execute("SELECT shift_id FROM shift WHERE shift_end_time IS NOT NULL ORDER BY shift_id DESC LIMIT 1")
         row = cursor.fetchone()
-        last_logout = "N/A"
         if row:
             latest_shift_id = row[0]
             # Now get the shift_end_time for that shift_id
@@ -960,7 +1003,7 @@ class DefaultPage(tk.Frame):
             self.after(1000, self.updateclock)  
     
     #Method to remove focus when a textbox is focused on
-    def remove_focus(self, event):
+    def remove_focus(self, event: tk.Event):
         widget = event.widget
         if not isinstance(widget, ttk.Entry):
             try:
@@ -968,31 +1011,51 @@ class DefaultPage(tk.Frame):
                     self.dummy_focus.focus_set()
             except tk.TclError:
                 pass  
+    
+    #Method to activate textbox
+    def activatetextbox(self, textboxname: str):  
+        getattr(self, textboxname).config(state = "normal")   
+        getattr(self, textboxname).focus_set()
+        for textbox in self.widget_configs:
+            if textbox[5] != textboxname:
+                getattr(self, textbox[5]).config(state = "disabled")            
             
 class TransactionsPage(tk.Frame):
-    def __init__(self, parent):
+    def __init__(self, parent: tk.Frame):
         super().__init__(parent, bg='white')
-        # Example: Scrollable table using ttk.Treeview
-        style = ttk.Style()
-        style.configure("Custom.Treeview",
+        
+        #Tree style
+        style:ttk.Style = ttk.Style()
+        style.theme_use('alt')
+        style.configure("Custom.Treeview", #type: ignore
                         background="white",
                         foreground="black",
                         rowheight=25,
-                        fieldbackground="white")
+                        fieldbackground="white") 
         
+        #setting columns
         columns = ('Pump Label', 'Fuel_type', 'Volume(Liters)', 'Price(Pesos)', 'Date(MM/DD/YY)')
+        
+        #Make tree
         tree = ttk.Treeview(self, columns=columns, show='headings', style= "Custom.Treeview")
         for col in columns:
             tree.heading(col, text=col, anchor='w')
             tree.column(col, anchor='w', width=100)
         tree.pack(side='left', fill='both', expand=True)
 
-        # Add vertical scrollbar
-        scrollbar = ttk.Scrollbar(self, orient='vertical', command=tree.yview)
-        tree.configure(yscroll=scrollbar.set)
+        #Vertical scrollbar
+        scrollbar = ttk.Scrollbar(self, orient='vertical', command=tree.yview) #type: ignore
+        tree.configure(yscroll=scrollbar.set) # type: ignore
         scrollbar.pack(side='right', fill='y')
 
-        # Example data
+        # Event binding to remove focus
+        def on_tree_click(event: tk.Event):
+            region = tree.identify("region", event.x, event.y)#type: ignore
+            if region != "cell":
+                tree.selection_remove(tree.selection())
+
+        tree.bind("<Button-1>", on_tree_click)
+
         connect = sqlite3.connect('Databases/inventory_db.db')
         cursor = connect.cursor()
         cursor.execute('''SELECT 
@@ -1006,68 +1069,405 @@ class TransactionsPage(tk.Frame):
                        JOIN fuel_type ON pump.fuel_type_id = fuel_type.fuel_type_id
                        ORDER BY transactions.transaction_id''')
         rows = cursor.fetchall()
-        print(rows)
         connect.close()
         for i, values in enumerate(rows):
             tag = 'evenrow' if i % 2 == 0 else 'oddrow'
             tree.insert('', 'end', values=values, tags=(tag,))
-        tree.tag_configure('evenrow', background="#86ea86")
-        tree.tag_configure('oddrow', background="#7cacdf")
-        style.map('Custom.Treeview', background=[('selected', "#8e8e8e")])
+        tree.tag_configure('evenrow', background="#c6ccc6")
+        tree.tag_configure('oddrow', background="#949994")
+        style.map('Custom.Treeview', background=[('selected', "#627595")])#type: ignore
                
 class PricePage(tk.Frame):
-    def __init__(self, parent):
+    def __init__(self, parent: tk.Frame):
         super().__init__(parent, bg='#91C4EE', bd=2, relief='solid')
         
         # Main container for centering content
-        container = tk.Frame(self, bg='#91C4EE', bd = 5, relief = 'solid')
-        container.pack(fill='both', expand=True)
+        self.container = tk.Frame(self, bg='#91C4EE', bd = 5, relief = 'solid')
+        self.container.pack(fill='both', expand=True)
         
         # Left frame (west)
-        Current_Liter_Price = tk.Frame(
-            container, 
-            bg="#ffffff", 
-            width=300, 
-            height=600,
-            bd=2, 
-            relief='solid'
-        )
-        Current_Liter_Price.pack(side='left', fill='y', padx=(50, 50), pady=30)
+        self.Current_Liter_Price = tk.Frame(self.container, bg="#ffffff", width=300, height=600,bd=2, relief='solid')
+        self.Current_Liter_Price.pack(side='left', fill='y', padx=(50, 50), pady=30)
         
+        self.tree_frame = tk.Frame(self.Current_Liter_Price, bg="#c1c9cb")
+        self.tree_frame.pack(fill='both', expand=True)
+    
+        self.style:ttk.Style = ttk.Style()
+        self.style.theme_use('alt')
+        self.style.configure("Custom.Treeview", #type: ignore
+                        background="white",
+                        foreground="black",
+                        rowheight=25,
+                        fieldbackground="white") 
+
+        #setup columns
+        self.columns = ('Fuel_type', 'Price', 'Effective_Date')
+        
+        # Create Treeview
+        self.price_tree = ttk.Treeview(
+            self.tree_frame,
+            columns = self.columns,
+            selectmode='browse',
+            show='headings',
+            height=15,
+            style = "Custom.Treeview",
+        )
+        for col in self.columns:
+            self.price_tree.heading(col, text=col, anchor='w')
+            self.price_tree.column(col, anchor='w', width=100)
+        self.price_tree.pack(side='left', fill='y', expand=True, padx =5, pady = 5)
+        
+        self.tree_scroll = ttk.Scrollbar(self.tree_frame, orient='vertical', command= self.price_tree.yview)# type: ignore
+        self.price_tree.configure(yscroll= self.tree_scroll.set)# type: ignore
+        self.tree_scroll.pack(side='left', fill='y')        
+    
+        self.style.map('Custom.Treeview', background=[('selected', "#627595")])#type: ignore
+        
+        self.refresh()
+        
+        self.price_tree.tag_configure('Diesel', background="#c6ccc6")
+        self.price_tree.tag_configure('Premium', background="#949994")
+        self.price_tree.tag_configure('Unleaded', background="#797D79")
+        
+        
+        #============================================================================================================
         # Center frame
-        EditPriceFrame = tk.Frame(
-            container, 
-            bg="#ffffff", 
-            width=600, 
+        self.EditPriceFrame = tk.Frame(
+            self.container, 
+            bg="#3498db", 
+            width=650, 
             height=600,
-            bd=2, 
-            relief='solid'
-        )
-        EditPriceFrame.pack(side='left', fill='none', padx=20, pady=30)
+            bd=0,
+            relief='flat',
+            highlightthickness=1,
+            highlightbackground="#D1E0FF",
+            highlightcolor="#D1E0FF",
+            padx=15,
+            pady=15
+            )
+        self.EditPriceFrame.pack(side='left', fill='both', expand=True, padx=(0, 20), pady=30)
         
+        self.widgets = [("Diesel_Norm_Row","dieselnorm_button", "dieselnormentry", 1, "Diesel Change Price"), 
+                   ("Premium_Norm_Row","premiumnorm_button", "premiumnormentry", 2, "Premium Change Price"), 
+                   ("Unleaded_Norm_Row","unleadednorm_button", "unleadednormentry", 3, "Unleaded Change Price"),
+                   ("Diesel100_Row","diesel100button", "diesel100entry", 4, "Diesel 100L Change Price"),
+                   ("Premium100_Row","premium100button", "premium100entry", 5, "Premium 100L Change Price"), 
+                   ("Unleaded100_Row","unleaded100button", "unleaded100entry", 6, "Unleaded 100L Change Price")]
+        self.dummy_focus = tk.Frame(self)
+        self.dummy_focus.place(x=0, y=0, width=1, height=1)
+        
+    
+        # Configure grid layout with better spacing
+        for r in range(6):
+            self.EditPriceFrame.grid_rowconfigure(r, weight=1)
+            self.EditPriceFrame.grid_columnconfigure(0, weight=1)
+            # Modern card-like row design
+            row = tk.Frame(
+                self.EditPriceFrame, 
+                bg="#ecf0f1", 
+                bd=0,
+                highlightthickness=1,
+                highlightbackground="#F0F5FF",
+                highlightcolor="#F0F5FF",
+                padx=10,
+                pady=5
+            )
+            row.grid(row=r, column=0, sticky="nsew", padx=5, pady=8)
+            row.grid_propagate(False)
+            row_name = self.widgets[r][0]
+            setattr(self, row_name, row)
+    
+        # Styled button and entry widgets
+        for row_name, buttonname, entryname, button_number, text in self.widgets:
+            # Modern button design
+            button = tk.Button(
+            getattr(self, row_name),
+            text=text,
+            bg="#4A7EFF", 
+            fg='white',
+            font=("Segoe UI", 11, "bold"),
+            bd=0,
+            command=lambda n=button_number: self.Onclick(n, self.widgets[n-1][2]),
+            padx=15,
+            pady=8,
+            relief='flat',
+            cursor="hand2",
+            activebackground="#3460CC",
+            activeforeground="white",
+            height=1,
+            width=20
+        )
+            button.pack(side='left', fill='y', padx=(10, 5), pady=10)
+            setattr(self, buttonname, button)
+        
+            # Modern entry design
+            entry = ttk.Entry(
+                getattr(self, row_name),
+                width=15,
+                font=("Segoe UI", 14),
+                state='disabled',
+                justify='center'
+            )
+            # Style configuration for entry
+            style = ttk.Style()
+            style.configure("Modern.TEntry", #type: ignore
+                        fieldbackground="#F8FAFF", 
+                        foreground="#333333",
+                        bordercolor="#D1E0FF",
+                        lightcolor="#D1E0FF",
+                        darkcolor="#D1E0FF",
+                        padding=(10, 8, 10, 8))
+            style.map("Modern.TEntry", #type: ignore
+                 fieldbackground=[("disabled", "#F8FAFF")],
+                 foreground=[("disabled", "#4A4A4A")])
+        
+            entry.configure(style="Modern.TEntry")
+            entry.pack(side='right', fill='both', expand=True, padx=(5, 15), pady=10)
+            setattr(self, entryname, entry)
+
         # Right frame (east)
-        Current_100L_Price = tk.Frame(
-            container, 
+        self.Current_100L_Price = tk.Frame(
+            self.container, 
             bg="#ffffff", 
             width=300, 
             height=600,
             bd=2, 
             relief='solid'
         )
-        Current_100L_Price.pack(side='left', fill='y', padx=(50, 50), pady=30)
+        self.Current_100L_Price.pack(side='left', fill='y', padx=(50, 50), pady=30)
         
+        self.tree100_frame = tk.Frame(self.Current_100L_Price, bg="#c1c9cb")
+        self.tree100_frame.pack(fill='both', expand=True)
+        
+        self.columns100 = ('Fuel_type', 'Price', 'Effective_Date')
+        # Create Treeview
+        self.price100_tree = ttk.Treeview(
+            self.tree100_frame,
+            columns = self.columns,
+            selectmode='browse',
+            show='headings',
+            height=15,
+            style = "Custom.Treeview",
+        )
+        for col in self.columns100:
+            self.price100_tree.heading(col, text=col, anchor='w')
+            self.price100_tree.column(col, anchor='w', width=100)
+        self.price100_tree.pack(side='left', fill='y', expand=True, padx =5, pady = 5)
+        
+        self.tree100_scroll = ttk.Scrollbar(self.tree100_frame, orient='vertical', command= self.price100_tree.yview)# type: ignore
+        self.price100_tree.configure(yscroll= self.tree100_scroll.set)# type: ignore
+        self.tree100_scroll.pack(side='left', fill='y')        
+    
+        self.style.map('Custom.Treeview', background=[('selected', "#627595")])#type: ignore
+        
+        self.refresh100()
+        
+        self.price100_tree.tag_configure('Diesel100', background="#c6ccc6")
+        self.price100_tree.tag_configure('Premium100', background="#949994")
+        self.price100_tree.tag_configure('Unleaded100', background="#797D79")
+        
+        self.bind_all("<Button-1>", self.remove_focus)
+    
+    def refresh100(self):
+        for item in self.price100_tree.get_children():
+            self.price100_tree.delete(item)
+            
+        connect = sqlite3.connect('Databases/inventory_db.db')
+        cursor = connect.cursor()
+        cursor.execute('''SELECT 
+                       Name,
+                       price,
+                       effective_date
+                       FROM price
+                       WHERE Name IN ('Diesel100', 'Premium100', 'Unleaded100')
+                       ORDER by Name ASC, price_id DESC
+                       ''')
+        rows = cursor.fetchall()
+        for i, values in enumerate(rows):
+            if rows[i][0] == "Diesel100":
+                tag = 'Diesel100'
+            elif rows[i][0] == "Premium100":
+                tag = 'Premium100'
+            elif rows[i][0] == "Unleaded100":
+                tag = 'Unleaded100'
+            else:
+                tag = "Lol"
+            self.price100_tree.insert('', 'end', values=values, tags=(tag,))  
+        connect.close()
+    
+    def refresh(self):
+        for item in self.price_tree.get_children():
+            self.price_tree.delete(item)
+            
+        connect = sqlite3.connect('Databases/inventory_db.db')
+        cursor = connect.cursor()
+        cursor.execute('''SELECT 
+                       Name,
+                       price,
+                       effective_date
+                       FROM price
+                       WHERE Name IN ('Diesel', 'Premium', 'Unleaded')
+                       ORDER by Name ASC, price_id DESC
+                       ''')
+        rows = cursor.fetchall()
+        for i, values in enumerate(rows):
+            if rows[i][0] == "Diesel":
+                tag = 'Diesel'
+            elif rows[i][0] == "Premium":
+                tag = 'Premium'
+            elif rows[i][0] == "Unleaded":
+                tag = 'Unleaded'
+            else:
+                tag = "Lol"
+            self.price_tree.insert('', 'end', values=values, tags=(tag,))  
+        connect.close()
+    
+    # Functionality when buttons are clicked    
+    def Onclick(self, button_number: int, entryname: str):
+        getattr(self, entryname).config(state ='normal')
+        getattr(self, entryname).focus_set()
+        match button_number:
+            case 1:
+                #print(f"Clicked {button_number}", entryname)
+                self.clear(entryname)
+                self.disable(entryname)
+                value = getattr(self, entryname).get()
+                self.getvalue(value, 1)
+            case 2:
+                #print(f"Clicked {button_number}", entryname)
+                self.clear(entryname)
+                self.disable(entryname)
+                value = getattr(self, entryname).get()
+                self.getvalue(value, 2)
+            case 3:
+                #print(f"Clicked {button_number}", entryname)
+                self.clear(entryname)
+                self.disable(entryname)
+                value = getattr(self, entryname).get()
+                self.getvalue(value, 3)
+            case 4:
+                #print(f"Clicked {button_number}", entryname)
+                self.clear(entryname)
+                self.disable(entryname)
+                value = getattr(self, entryname).get()
+                self.getvalue(value, 4)
+            case 5:
+                #print(f"Clicked {button_number}", entryname)
+                self.clear(entryname)
+                self.disable(entryname)
+                value = getattr(self, entryname).get()
+                self.getvalue(value, 5)
+            case 6:   
+                #print(f"Clicked {button_number}", entryname)
+                self.clear(entryname)
+                self.disable(entryname)
+                value = getattr(self, entryname).get()
+                self.getvalue(value, 6)
+            case _: pass
+               
+    #function to get values
+    def getvalue(self, value: str, number: int):
+        #this is the number assigned to fuel types and its volume
+        '''
+        1 - Diesel
+        2 - Premium
+        3 - Unleaded
+        4 - Diesel100
+        5 - Premium100
+        6 - Unleaded100
+        '''
+        
+        number_id: int = number
+        
+        #try except to add values if they are appropriate and reject if not
+        try:
+            volumechange = float(value)
+            print(f"value of {volumechange} is added")
+            print(type(volumechange))
+            self.clear(None)
+            try:
+                if self.dummy_focus.winfo_exists():
+                    self.dummy_focus.focus_set()
+            except tk.TclError:
+                pass      
+            self.addvalue(volumechange, number_id)
+        except ValueError as e:
+            print(f"{e}")
+    
+    #clear each textbox
+    def clear(self, widget: str | None):
+        for textbox in self.widgets: 
+            if textbox[2] != widget:
+                getattr(self, textbox[2]).delete(0,tk.END)  
+     
+    #disable each textbox              
+    def disable(self, widget: str):
+        for textbox in self.widgets: 
+            if textbox[2] != widget:
+                getattr(self, textbox[2]).config(state = 'disabled')  
+    
+    #add value to database            
+    def addvalue(self, value: float, number_id: int):
+        #passing values from other function
+        fuel_type_id: int | None = 0
+        Name: str | None = ""
+        price: float | None = value
+        
+        #establishing connection
+        conn = sqlite3.connect('Databases/inventory_db.db')
+        cursor = conn.cursor()
+        
+        match number_id:
+            case 1:
+                fuel_type_id = 1
+                Name = "Diesel"
+            case 2:
+                fuel_type_id = 2
+                Name = "Premium"
+            case 3:
+                fuel_type_id = 3
+                Name = "Unleaded"
+            case 4:
+                fuel_type_id = 1
+                Name = "Diesel100"
+            case 5:
+                fuel_type_id = 2
+                Name = "Premium100"
+            case 6:
+                fuel_type_id = 3
+                Name = "Unleaded100"
+            case _: pass  
+        cursor.execute('''
+                       INSERT INTO price(fuel_type_id, Name, price)
+                       Values(?,?,?)
+                       ''', (fuel_type_id, Name, price))
+        conn.commit()
+        conn.close()
+        self.refresh()
+        self.refresh100()
+    
+    #remove focus    
+    def remove_focus(self, event: tk.Event):
+        widget = event.widget
+        if not isinstance(widget, ttk.Entry):
+            try:
+                if self.dummy_focus.winfo_exists():
+                    self.dummy_focus.focus_set()
+            except tk.TclError:
+                pass               
+                
 class DeliveryPage(tk.Frame):
-    def __init__(self, parent):
+    def __init__(self, parent:tk.Frame):
         super().__init__(parent, bg='white')
         tk.Label(self, text="Delivery Content").pack()
         
 class IncomePage(tk.Frame):
-    def __init__(self, parent):
+    def __init__(self, parent:tk.Frame):
         super().__init__(parent, bg='white')
         tk.Label(self, text="Dashboard Content").pack()
 
 class InventoryPage(tk.Frame):
-    def __init__(self, parent):
+    def __init__(self, parent:tk.Frame):
         super().__init__(parent, bg='white')
         tk.Label(self, text="Inventory Content").pack()
 
