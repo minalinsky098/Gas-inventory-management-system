@@ -11,6 +11,7 @@ def hash_password(password: str):
     return hashlib.sha256(password.encode()).hexdigest()
 
 def setup_database():
+    datenow = datetime.datetime.now().strftime("%m-%d-%Y")
     conn = sqlite3.connect('Databases/inventory_db.db')
     cursor = conn.cursor()
     # Create db tables 
@@ -58,7 +59,7 @@ def setup_database():
             pump_id INTEGER NOT NULL,
             Volume REAL NOT NULL,
             Price REAL NOT NULL,
-            Date TEXT DEFAULT (strftime('%m-%d-%Y', 'now')),
+            Date DATETIME,
             FOREIGN KEY (shift_id) REFERENCES shift(shift_id),
             FOREIGN KEY (pump_id) REFERENCES pump(pump_id)
         )
@@ -70,11 +71,12 @@ def setup_database():
         fuel_type_id INTEGER NOT NULL,
         Name Text Not NULL,
         price REAL NOT NULL, 
-        effective_date TEXT DEFAULT (strftime('%m-%d-%Y', 'now')),
+        effective_date DATETIME,
         FOREIGN KEY (fuel_type_id) REFERENCES fuel_type(fuel_type_id)
         )
         '''
     )
+    
     
     # Set the fuel types
     cursor.execute('SELECT COUNT(*) FROM fuel_type')
@@ -125,34 +127,34 @@ def setup_database():
                 "Set Diesel Price",
                 "Enter price per liter of diesel:",
             )
-        cursor.execute('INSERT INTO price(fuel_type_id, price, Name) VALUES (?,?,?)', (1,dieselprice,'Diesel',))
+        cursor.execute('INSERT INTO price(fuel_type_id, price, Name,effective_date) VALUES (?,?,?,?)', (1,dieselprice,'Diesel',datenow,))
         diesel100price = simpledialog.askfloat(
                 "Set Diesel100 Price",
                 "Enter price per 100 liters of diesel:",
             )
-        cursor.execute('INSERT INTO price(fuel_type_id, price, Name) VALUES (?,?,?)', (1,diesel100price,'Diesel100',))
+        cursor.execute('INSERT INTO price(fuel_type_id, price, Name,effective_date) VALUES (?,?,?,?)', (1,diesel100price,'Diesel100',datenow,))
         
         premiumprice = simpledialog.askfloat(
                 "Set Premium Price",
                 "Enter price per liter of premium:",
             )
-        cursor.execute('INSERT INTO price(fuel_type_id, price, Name) VALUES (?,?,?)', (2,premiumprice,'Premium',))
+        cursor.execute('INSERT INTO price(fuel_type_id, price, Name,effective_date) VALUES (?,?,?,?)', (2,premiumprice,'Premium',datenow,))
         premium100price = simpledialog.askfloat(
                 "Set Premium100 Price",
                 "Enter price per 100 liters of premium:",
             )
-        cursor.execute('INSERT INTO price(fuel_type_id, price, Name) VALUES (?,?,?)', (2,premium100price,'Premium100',))
+        cursor.execute('INSERT INTO price(fuel_type_id, price, Name,effective_date) VALUES (?,?,?,?)', (2,premium100price,'Premium100',datenow,))
         
         unleadedprice = simpledialog.askfloat(
                 "Set Unleaded Price",
                 "Enter price per liter of Unleaded:",
             )
-        cursor.execute('INSERT INTO price(fuel_type_id, price, Name) VALUES (?,?,?)', (3,unleadedprice,'Unleaded',))
+        cursor.execute('INSERT INTO price(fuel_type_id, price, Name,effective_date) VALUES (?,?,?,?)', (3,unleadedprice,'Unleaded',datenow,))
         unleaded100price = simpledialog.askfloat(
                 "Set Unleaded100 Price",
                 "Enter price per 100 liters of Unleaded:",
             )
-        cursor.execute('INSERT INTO price(fuel_type_id, price, Name) VALUES (?,?,?)', (3,unleaded100price,'Unleaded100',))
+        cursor.execute('INSERT INTO price(fuel_type_id, price, Name,effective_date) VALUES (?,?,?,?)', (3,unleaded100price,'Unleaded100',datenow,))
 
     conn.commit()
     conn.close()
@@ -887,6 +889,7 @@ class DefaultPage(tk.Frame):
         for config in self.widget_configs:
             volume_entry = getattr(self, config[5])
             price_entry = getattr(self, config[6])
+            datenow = datetime.datetime.now().strftime("%m-%d-%Y")
             if str(volume_entry['state']) == 'normal':
                 #print(f"Transaction of: {config[3]}")
                 try:
@@ -907,9 +910,9 @@ class DefaultPage(tk.Frame):
                         shift_id = shift_id_row[0]
                         #print(shift_id)
                         cursor.execute('''
-                                       INSERT INTO transactions(shift_id, pump_id, volume, price)
-                                       Values(?,?,?,?)
-                                       ''',(shift_id, pump_id, volume_value, price_value))
+                                       INSERT INTO transactions(shift_id, pump_id, volume, price, Date)
+                                       Values(?,?,?,?,?)
+                                       ''',(shift_id, pump_id, volume_value, price_value, datenow))
                         conn.commit()
                         conn.close()
                 except ValueError: 
@@ -1067,7 +1070,7 @@ class TransactionsPage(tk.Frame):
                        FROM transactions
                        JOIN pump ON transactions.pump_id = pump.pump_id
                        JOIN fuel_type ON pump.fuel_type_id = fuel_type.fuel_type_id
-                       ORDER BY transactions.transaction_id''')
+                       ORDER BY transactions.transaction_id DESC''')
         rows = cursor.fetchall()
         connect.close()
         for i, values in enumerate(rows):
@@ -1076,7 +1079,7 @@ class TransactionsPage(tk.Frame):
         tree.tag_configure('evenrow', background="#c6ccc6")
         tree.tag_configure('oddrow', background="#949994")
         style.map('Custom.Treeview', background=[('selected', "#627595")])#type: ignore
-               
+        
 class PricePage(tk.Frame):
     def __init__(self, parent: tk.Frame):
         super().__init__(parent, bg='#91C4EE', bd=2, relief='solid')
@@ -1128,8 +1131,7 @@ class PricePage(tk.Frame):
         self.price_tree.tag_configure('Diesel', background="#c6ccc6")
         self.price_tree.tag_configure('Premium', background="#949994")
         self.price_tree.tag_configure('Unleaded', background="#797D79")
-        
-        
+
         #============================================================================================================
         # Center frame
         self.EditPriceFrame = tk.Frame(
@@ -1267,7 +1269,10 @@ class PricePage(tk.Frame):
         self.price100_tree.tag_configure('Unleaded100', background="#797D79")
         
         self.bind_all("<Button-1>", self.remove_focus)
+        self.selected = 0
+        self.selected100 = 0
     
+    #Method on the right side scrollbar
     def refresh100(self):
         for item in self.price100_tree.get_children():
             self.price100_tree.delete(item)
@@ -1295,6 +1300,7 @@ class PricePage(tk.Frame):
             self.price100_tree.insert('', 'end', values=values, tags=(tag,))  
         connect.close()
     
+    #Method on the left side scrollbar
     def refresh(self):
         for item in self.price_tree.get_children():
             self.price_tree.delete(item)
@@ -1412,6 +1418,7 @@ class PricePage(tk.Frame):
         fuel_type_id: int | None = 0
         Name: str | None = ""
         price: float | None = value
+        datenow = datetime.datetime.now().strftime("%m-%d-%Y")
         
         #establishing connection
         conn = sqlite3.connect('Databases/inventory_db.db')
@@ -1438,9 +1445,9 @@ class PricePage(tk.Frame):
                 Name = "Unleaded100"
             case _: pass  
         cursor.execute('''
-                       INSERT INTO price(fuel_type_id, Name, price)
-                       Values(?,?,?)
-                       ''', (fuel_type_id, Name, price))
+                       INSERT INTO price(fuel_type_id, Name, price,effective_date)
+                       Values(?,?,?,?)
+                       ''', (fuel_type_id, Name, price,datenow))
         conn.commit()
         conn.close()
         self.refresh()
@@ -1451,8 +1458,16 @@ class PricePage(tk.Frame):
         widget = event.widget
         if not isinstance(widget, ttk.Entry):
             try:
+                if self.selected: 
+                    self.refresh()
+                    self.selected = 0
+                if self.selected100:
+                    self.refresh100()
+                    self.selected100 = 0
                 if self.dummy_focus.winfo_exists():
                     self.dummy_focus.focus_set()
+                    self.selected = self.price_tree.focus()
+                    self.selected100 = self.price100_tree.focus()
             except tk.TclError:
                 pass               
                 
