@@ -379,7 +379,7 @@ class LoginPage(tk.Frame):
         # Footer
         footer = tk.Label(
             login_card,
-            text="© 2023 Dwyane's Inventory Management System",
+            text="© 2025 Dwyane's Inventory Management System",
             font=("Segoe UI", 9),
             bg=self.light_text,
             fg='#7f8c8d'
@@ -421,7 +421,6 @@ class HomePage(tk.Frame):
     def __init__(self, parent: tk.Tk, controller: ProjectFrame, role: str | None, user_id: int |None):
         
         self.shift_icon = ImageTk.PhotoImage(Image.open("images/shift.png").resize((24, 24)))#type: ignore
-        self.income_icon = ImageTk.PhotoImage(Image.open("images/income.png").resize((24, 24)))#type: ignore
         self.price_icon = ImageTk.PhotoImage(Image.open("images/price.png").resize((24, 24)))#type: ignore
         self.delivery_icon = ImageTk.PhotoImage(Image.open("images/delivery.png").resize((24, 24)))#type: ignore
         self.inventory_icon = ImageTk.PhotoImage(Image.open("images/inventory.png").resize((24, 24)))#type: ignore
@@ -432,12 +431,11 @@ class HomePage(tk.Frame):
         #navigation buttons 
         self.buttons = [
             ("Start Shift", self.shift_icon, lambda: self.Onclick(1)),
-            ("Income", self.income_icon, lambda: self.Onclick(2)),
-            ("Price", self.price_icon, lambda: self.Onclick(3)),
-            ("Delivery", self.delivery_icon, lambda: self.Onclick(4)),
-            ("Inventory", self.inventory_icon, lambda: self.Onclick(5)),
-            ("Transactions", self.transactions_icon, lambda: self.Onclick(6)),
-            ("Logout", self.logout_icon, lambda: self.Onclick(7))
+            ("Price", self.price_icon, lambda: self.Onclick(2)),
+            ("Inventory", self.inventory_icon, lambda: self.Onclick(3)),
+            ("Transactions", self.transactions_icon, lambda: self.Onclick(4)),
+            ("Delivery", self.delivery_icon, lambda: self.Onclick(5)),
+            ("Logout", self.logout_icon, lambda: self.Onclick(6))
         ]
 
         super().__init__(parent, bg='#f5f7fa')  # Match login background
@@ -567,28 +565,18 @@ class HomePage(tk.Frame):
     
     # Method to handle button clicks 
     def Onclick(self, number: int):
-        def income_report(time_period: str):
-            messagebox.showinfo("Income Report", "Income report generated successfully!")#type: ignore
-            self.show_content(IncomePage)
         match number:
             case 1:
                 self.toggle_shift()
-            case 2:
-                menu = tk.Menu(self, tearoff=0)
-                menu.add_command(label="Daily income", command=lambda: income_report("Daily"))
-                menu.add_command(label="Weekly income", command=lambda: income_report("Weekly"))
-                menu.add_command(label="Monthly income", command=lambda: income_report("Monthly"))
-                menu.add_command(label="Yearly income", command=lambda: income_report("Yearly"))
-                menu.tk_popup(self.winfo_pointerx(), self.winfo_pointery())
-            case 3: 
+            case 2: 
                 self.show_content(PricePage)
-            case 4:
-                self.show_content(DeliveryPage) 
-            case 5:
+            case 3:
                 self.show_content(InventoryPage)
-            case 6:
+            case 4:
                 self.show_content(TransactionsPage)
-            case 7:
+            case 5:
+                self.show_content(DeliveryPage) 
+            case 6:
                 if self.controller.shift_started:
                     messagebox.showwarning("Action Blocked", "You cannot logout while a shift is active. Please end the shift first.")#type: ignore
                     self.show_content(DefaultPage, userlogin = True)
@@ -1085,7 +1073,7 @@ class PricePage(tk.Frame):
         super().__init__(parent, bg='#91C4EE', bd=2, relief='solid')
         
         # Main container for centering content
-        self.container = tk.Frame(self, bg='#91C4EE', bd = 5, relief = 'solid')
+        self.container = tk.Frame(self, bg='#91C4EE')
         self.container.pack(fill='both', expand=True)
         
         # Left frame (west)
@@ -1475,16 +1463,66 @@ class DeliveryPage(tk.Frame):
     def __init__(self, parent:tk.Frame):
         super().__init__(parent, bg='white')
         tk.Label(self, text="Delivery Content").pack()
-        
-class IncomePage(tk.Frame):
-    def __init__(self, parent:tk.Frame):
-        super().__init__(parent, bg='white')
-        tk.Label(self, text="Dashboard Content").pack()
 
 class InventoryPage(tk.Frame):
     def __init__(self, parent:tk.Frame):
-        super().__init__(parent, bg='white')
-        tk.Label(self, text="Inventory Content").pack()
+        super().__init__(parent, bg='#91C4EE')
+        
+        # Frames for each fuel type (unchanged)
+        self.left_frame = tk.Frame(self, bg = '#ffffff', width = 500, height = 600, bd = 2, relief = 'solid')
+        self.left_frame.pack(side = 'left', fill = 'y', padx = 10, pady = 10)
+        self.center_frame = tk.Frame(self, bg = '#ffffff', width = 500, height = 600, bd = 2, relief = 'solid')
+        self.center_frame.pack(side = 'left', fill = 'y', padx = 10, pady = 10)
+        self.right_frame = tk.Frame(self, bg = '#ffffff', width = 500, height = 600, bd = 2, relief = 'solid')
+        self.right_frame.pack(side = 'left', fill = 'y', padx = 10, pady = 10)
+        
+        # Top and Bottom Frames for each fuel type
+        self.upper_frame_left = tk.Frame(self.left_frame, bg = "#2c3e50", width = 500, height = 100, bd = 0, relief = 'flat')
+        self.upper_frame_left.pack(side = 'top', fill = 'x')
+        
+        self.upper_frame_center = tk.Frame(self.center_frame, bg = "#2c3e50", width = 500, height = 100, bd = 0, relief = 'flat')
+        self.upper_frame_center.pack(side = 'top', fill = 'x')
+        
+        self.upper_frame_right = tk.Frame(self.right_frame, bg = "#2c3e50", width = 500, height = 100, bd = 0, relief = 'flat')
+        self.upper_frame_right.pack(side = 'top', fill = 'x')
+        
+        # Stylish Diesel label with decorative elements
+        # Diesel
+        diesel_container = tk.Frame(self.upper_frame_left, bg="#3498db", bd=0, highlightthickness=0,height=80)
+        diesel_container.pack(side='top', fill='x', padx=10, pady=10, expand=True)
+        tk.Frame(diesel_container, bg="#56e73c", width=100, height=80).pack(side='left', fill='y')
+        tk.Label(diesel_container, text="DIESEL", bg="#3498db",  fg="white", font=('Segoe UI', 28, 'bold'), padx=20).pack(side='left', fill='both', expand=True)
+        left_accent_frame = tk.Frame(diesel_container, bg="#3498db", width=50)
+        left_accent_frame.pack(side='right', fill='y')
+        tk.Label(left_accent_frame, text="⛽", bg="#3498db",fg="white",font=('Segoe UI', 28)).pack()
+        
+        # Premium
+        premium_container = tk.Frame(self.upper_frame_center, bg="#3498db", bd=0, highlightthickness=0,height=80)
+        premium_container.pack(side='top', fill='x', padx=10, pady=10, expand=True)
+        tk.Frame(premium_container, bg="#56e73c", width=100, height=80).pack(side='left', fill='y')
+        tk.Label(premium_container, text="PREMIUM", bg="#3498db",  fg="white", font=('Segoe UI', 28, 'bold'), padx=20).pack(side='left', fill='both', expand=True)
+        center_accent_frame = tk.Frame(premium_container, bg="#3498db", width=50)
+        center_accent_frame.pack(side='right', fill='y')
+        tk.Label(center_accent_frame, text="⛽", bg="#3498db",fg="white",font=('Segoe UI', 28)).pack()
+        
+        # Unleaded
+        unleaded_container = tk.Frame(self.upper_frame_right, bg="#3498db", bd=0, highlightthickness=0,height=80)
+        unleaded_container.pack(side='top', fill='x', padx=10, pady=10, expand=True)
+        tk.Frame(unleaded_container, bg="#56e73c", width=100, height=80).pack(side='left', fill='y')
+        tk.Label(unleaded_container, text="UNLEADED", bg="#3498db",  fg="white", font=('Segoe UI', 28, 'bold'), padx=20).pack(side='left', fill='both', expand=True)
+        right_accent_frame = tk.Frame(unleaded_container, bg="#3498db", width=50)
+        right_accent_frame.pack(side='right', fill='y')
+        tk.Label(right_accent_frame, text="⛽", bg="#3498db",fg="white",font=('Segoe UI', 28)).pack()
+        
+        #Lower Frames of each fuel type
+        self.lower_frame_left = tk.Frame(self.left_frame, bg = "#e1e9ea", width = 500, height = 500)
+        self.lower_frame_left.pack(side = 'top', fill = 'both', expand=True)
+        
+        self.lower_frame_center = tk.Frame(self.center_frame, bg = "#e1e9ea", width = 500, height = 500)
+        self.lower_frame_center.pack(side = 'top', fill = 'both', expand=True)
+        
+        self.lower_frame_right = tk.Frame(self.right_frame, bg = "#e1e9ea", width = 500, height = 500)
+        self.lower_frame_right.pack(side = 'top', fill = 'both', expand=True)
 
 # --- Run program ---
 setup_database()
