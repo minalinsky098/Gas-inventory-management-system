@@ -1550,24 +1550,36 @@ class InventoryPage(tk.Frame):
                        SELECT strftime('%Y-%d', Date) as Daily_Date,
                        SUM(CASE WHEN pump_id = 1 or pump_id = 2 THEN price ELSE 0 END) as Daily_Total_income
                        FROM transactions
+                       GROUP BY Daily_Date
+                       ORDER BY Daily_Date DESC
+                       LIMIT 1
                        """)
         daily_diesel_row = cursor.fetchone()
         cursor.execute("""
                        SELECT strftime('%Y-%W', Date) as Weekly_Date,
                        SUM(CASE WHEN pump_id =  1 or pump_id = 2 THEN price ELSE 0 END) AS total_price_pump
                        FROM transactions
+                       GROUP BY Weekly_Date
+                       ORDER BY Weekly_Date DESC
+                       LIMIT 1
                        """)
         weekly_diesel_row = cursor.fetchone()
         cursor.execute("""
                        SELECT strftime('%Y-%m', Date) as Monthly_Date,
                        SUM(CASE WHEN pump_id =  1 or pump_id = 2 THEN price ELSE 0 END) AS total_price_pump
                        FROM transactions
+                       GROUP BY Monthly_Date
+                       ORDER BY Monthly_Date DESC
+                       LIMIT 1
                        """)
         monthly_diesel_row = cursor.fetchone()
         cursor.execute("""
-                       SELECT strftime('%Y', Date) as Monthly_Date,
+                       SELECT strftime('%Y', Date) as Yearly_Date,
                        SUM(CASE WHEN pump_id =  1 or pump_id = 2 THEN price ELSE 0 END) AS total_price_pump
                        FROM transactions
+                       GROUP BY Yearly_Date
+                       ORDER BY Yearly_Date DESC
+                       LIMIT 1
                        """)
         yearly_diesel_row = cursor.fetchone()
         cursor.execute("""
@@ -1628,10 +1640,13 @@ class InventoryPage(tk.Frame):
         diesel_volumes_lifetime = cursor.fetchone()
         cursor.execute("""
                        SELECT
-                       strftime('%Y-%m-%d', Date),
-                       SUM(CASE WHEN pump_id = 1 THEN volume ELSE 0 END),
-                       SUM(CASE WHEN pump_id = 2 THEN volume ELSE 0 END)
+                       strftime('%Y-%m-%d', Date) AS daily_date,
+                       SUM(CASE WHEN pump_id = 1 THEN volume ELSE 0 END) AS daily_volume_pump_1,
+                       SUM(CASE WHEN pump_id = 2 THEN volume ELSE 0 END) AS daily_volume_pump_2
                        FROM transactions
+                       GROUP BY daily_date  
+                       ORDER BY daily_date DESC
+                       LIMIT 1;
                        """)
         diesel_volumes_daily = cursor.fetchone()
         
@@ -1684,24 +1699,36 @@ class InventoryPage(tk.Frame):
                        SELECT strftime('%Y-%d', Date) as Daily_Date,
                        SUM(CASE WHEN pump_id = 3 or pump_id = 4 or pump_id = 5 THEN price ELSE 0 END)
                        FROM transactions
+                       GROUP BY Daily_Date
+                       ORDER BY Daily_Date DESC
+                       LIMIT 1
                        """)
         daily_premium_row = cursor.fetchone()
         cursor.execute("""
                        SELECT strftime('%Y-%W', Date) as Weekly_Date,
                        SUM(CASE WHEN pump_id = 3 or pump_id = 4 or pump_id = 5 THEN price ELSE 0 END)
                        FROM transactions
+                       GROUP BY Weekly_Date
+                       ORDER BY Weekly_Date DESC
+                       LIMIT 1
                        """)
         weekly_premium_row = cursor.fetchone()
         cursor.execute("""
                        SELECT strftime('%Y-%m', Date) as Monthly_Date,
                        SUM(CASE WHEN pump_id = 3 or pump_id = 4 or pump_id = 5 THEN price ELSE 0 END)
                        FROM transactions
+                       GROUP BY Monthly_Date
+                       ORDER BY Monthly_Date DESC
+                       LIMIT 1
                        """)
         monthly_premium_row = cursor.fetchone()
         cursor.execute("""
-                       SELECT strftime('%Y', Date) as Monthly_Date,
+                       SELECT strftime('%Y', Date) as Yearly_Date,
                        SUM(CASE WHEN pump_id = 3 or pump_id = 4 or pump_id = 5 THEN price ELSE 0 END)
                        FROM transactions
+                       GROUP BY Yearly_Date
+                       ORDER BY Yearly_Date DESC
+                       LIMIT 1
                        """)
         yearly_premium_row = cursor.fetchone()
         cursor.execute("""
@@ -1763,11 +1790,14 @@ class InventoryPage(tk.Frame):
         premium_volumes_lifetime = cursor.fetchone()
         cursor.execute("""
                        SELECT
-                       strftime('%Y-%m-%d', Date),
+                       strftime('%Y-%m-%d', Date) as Daily_Date,
                        SUM(CASE WHEN pump_id = 3 THEN volume ELSE 0 END),
                        SUM(CASE WHEN pump_id = 4 THEN volume ELSE 0 END),
                        SUM(CASE WHEN pump_id = 5 THEN volume ELSE 0 END)
                        FROM transactions
+                       GROUP BY Daily_Date
+                       ORDER BY Daily_Date DESC
+                       LIMIT 1
                        """)
         premium_volumes_daily = cursor.fetchone()
         
@@ -1837,24 +1867,36 @@ class InventoryPage(tk.Frame):
                        SELECT strftime('%Y-%d', Date) as Daily_Date,
                        SUM(CASE WHEN pump_id = 6 THEN price ELSE 0 END)
                        FROM transactions
+                       GROUP BY Daily_Date 
+                       ORDER BY Daily_Date DESC
+                       LIMIT 1
                        """)
         daily_unleaded_row = cursor.fetchone()
         cursor.execute("""
                        SELECT strftime('%Y-%W', Date) as Weekly_Date,
                        SUM(CASE WHEN pump_id = 6 THEN price ELSE 0 END)
                        FROM transactions
+                       GROUP BY Weekly_Date
+                       ORDER BY Weekly_Date DESC
+                       LIMIT 1
                        """)
         weekly_unleaded_row = cursor.fetchone()
         cursor.execute("""
                        SELECT strftime('%Y-%m', Date) as Monthly_Date,
                        SUM(CASE WHEN pump_id = 6 THEN price ELSE 0 END)
                        FROM transactions
+                       GROUP BY Monthly_Date
+                       ORDER BY Monthly_Date DESC
+                       LIMIT 1
                        """)
         monthly_unleaded_row = cursor.fetchone()
         cursor.execute("""
-                       SELECT strftime('%Y', Date) as Monthly_Date,
+                       SELECT strftime('%Y', Date) as Yearly_Date,
                        SUM(CASE WHEN pump_id = 6 THEN price ELSE 0 END)
                        FROM transactions
+                       GROUP BY Yearly_Date
+                       ORDER BY Yearly_Date DESC
+                       LIMIT 1
                        """)
         yearly_unleaded_row = cursor.fetchone()
         cursor.execute("""
@@ -1914,9 +1956,12 @@ class InventoryPage(tk.Frame):
         unleaded_volumes_lifetime = cursor.fetchone()
         cursor.execute("""
                        SELECT
-                       strftime('%Y-%m-%d', Date),
+                       strftime('%Y-%m-%d', Date) as Daily_Date,
                        SUM(CASE WHEN pump_id = 6 THEN volume ELSE 0 END)
                        FROM transactions
+                       GROUP BY Daily_Date
+                       ORDER BY Daily_Date DESC
+                       LIMIT 1
                        """)
         unleaded_volumes_daily = cursor.fetchone()
         
