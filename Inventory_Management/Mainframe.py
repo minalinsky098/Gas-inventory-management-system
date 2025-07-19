@@ -877,7 +877,7 @@ class DefaultPage(tk.Frame):
         for config in self.widget_configs:
             volume_entry = getattr(self, config[5])
             price_entry = getattr(self, config[6])
-            datenow = datetime.datetime.now().strftime("%m-%d-%Y")
+            datenow = datetime.datetime.now().strftime("%Y-%m-%d")
             if str(volume_entry['state']) == 'normal':
                 #print(f"Transaction of: {config[3]}")
                 try:
@@ -1025,7 +1025,7 @@ class TransactionsPage(tk.Frame):
                         fieldbackground="white") 
         
         #setting columns
-        columns = ('Pump Label', 'Fuel_type', 'Volume(Liters)', 'Price(Pesos)', 'Date(MM/DD/YY)')
+        columns = ('Pump Label', 'Fuel_type', 'Volume(Liters)', 'Price(Pesos)', 'Date(YYYY/MM/DD)')
         
         #Make tree
         tree = ttk.Treeview(self, columns=columns, show='headings', style= "Custom.Treeview")
@@ -1523,6 +1523,424 @@ class InventoryPage(tk.Frame):
         
         self.lower_frame_right = tk.Frame(self.right_frame, bg = "#e1e9ea", width = 500, height = 500)
         self.lower_frame_right.pack(side = 'top', fill = 'both', expand=True)
+        
+        conn = sqlite3.connect('Databases/inventory_db.db')
+        cursor = conn.cursor()
+        
+        #halves of each lower frames
+        
+        #Left
+        for frame in [self.lower_frame_left, self.lower_frame_center, self.lower_frame_right]:
+            frame.grid_rowconfigure(0, weight=1)
+            frame.grid_columnconfigure(0, weight=1)
+            frame.grid_columnconfigure(1, weight=1)
+        
+        self.left_income_frame = tk.Frame(self.lower_frame_left, bg = "#91C4EE", width = 250, height = 500, bd = 2, relief='solid')
+        self.left_income_frame.grid(row = 0, column = 0, sticky='nsew')
+        self.left_income_frame.columnconfigure(0, weight=1)
+        self.left_income_frame.grid_propagate(False)
+        
+        self.left_volume_frame = tk.Frame(self.lower_frame_left, bg = "#91C4EE", width = 250, height = 500, bd = 2, relief='solid')
+        self.left_volume_frame.grid(row = 0, column = 1, sticky='nsew')
+        self.left_volume_frame.columnconfigure(0, weight=1)
+        self.left_volume_frame.grid_propagate(False)
+        
+        #fetches income of diesel based on time
+        cursor.execute("""
+                       SELECT strftime('%Y-%d', Date) as Daily_Date,
+                       SUM(CASE WHEN pump_id = 1 or pump_id = 2 THEN price ELSE 0 END) as Daily_Total_income
+                       FROM transactions
+                       """)
+        daily_diesel_row = cursor.fetchone()
+        cursor.execute("""
+                       SELECT strftime('%Y-%W', Date) as Weekly_Date,
+                       SUM(CASE WHEN pump_id =  1 or pump_id = 2 THEN price ELSE 0 END) AS total_price_pump
+                       FROM transactions
+                       """)
+        weekly_diesel_row = cursor.fetchone()
+        cursor.execute("""
+                       SELECT strftime('%Y-%m', Date) as Monthly_Date,
+                       SUM(CASE WHEN pump_id =  1 or pump_id = 2 THEN price ELSE 0 END) AS total_price_pump
+                       FROM transactions
+                       """)
+        monthly_diesel_row = cursor.fetchone()
+        cursor.execute("""
+                       SELECT strftime('%Y', Date) as Monthly_Date,
+                       SUM(CASE WHEN pump_id =  1 or pump_id = 2 THEN price ELSE 0 END) AS total_price_pump
+                       FROM transactions
+                       """)
+        yearly_diesel_row = cursor.fetchone()
+        cursor.execute("""
+                       SELECT
+                       SUM(CASE WHEN pump_id =  1 or pump_id = 2 THEN price ELSE 0 END) AS total_price_pump
+                       FROM transactions
+                       """)
+        lifetime_diesel_row = cursor.fetchone()
+        
+        #creates and puts the income information into the labels
+        daily_income_diesel_label = tk.Label(self.left_income_frame,
+                                             text = f"Daily Income \n-------------------------------\n₱{daily_diesel_row[1]}",
+                                             fg = "#131414",
+                                             bg = '#3498db',
+                                             font=("Segoe UI", 14)
+                                            )
+        daily_income_diesel_label.grid(row=0, column=0, sticky="nsew", pady=30)
+        
+        weekly_income_diesel_label = tk.Label(self.left_income_frame,
+                                             text = f"Weekly Income \n-------------------------------\n₱{weekly_diesel_row[1]}",
+                                             fg = "#131414",
+                                             bg = '#3498db',
+                                             font=("Segoe UI", 14)
+                                            )
+        weekly_income_diesel_label.grid(row=1, column=0, sticky="nsew", pady=30)
+        
+        monthly_income_diesel_label = tk.Label(self.left_income_frame,
+                                             text = f"Monthly Income \n-------------------------------\n₱{monthly_diesel_row[1]}",
+                                             fg = "#131414",
+                                             bg = '#3498db',
+                                             font=("Segoe UI", 14)
+                                            )
+        monthly_income_diesel_label.grid(row=2, column=0, sticky="nwsew", pady=30)
+        
+        yearly_income_diesel_label = tk.Label(self.left_income_frame,
+                                             text = f"Yearly Income \n-------------------------------\n₱{yearly_diesel_row[1]}",
+                                             fg = "#131414",
+                                             bg = '#3498db',
+                                             font=("Segoe UI", 14)
+                                            )
+        yearly_income_diesel_label.grid(row=3, column=0, sticky="nsew", pady=30)
+        
+        lifetime_income_diesel_label = tk.Label(self.left_income_frame,
+                                             text = f"Lifetime Income \n-------------------------------\n₱{lifetime_diesel_row[0]}",
+                                             fg = "#131414",
+                                             bg = '#3498db',
+                                             font=("Segoe UI", 14)
+                                            )
+        lifetime_income_diesel_label.grid(row=3, column=0, sticky="nsew", pady=30)
+        
+        #fetches both lifetime and daily volume
+        cursor.execute("""
+                       SELECT
+                       SUM(CASE WHEN pump_id = 1 THEN volume ELSE 0 END),
+                       SUM(CASE WHEN pump_id = 2 THEN volume ELSE 0 END)
+                       FROM transactions
+                       """)
+        diesel_volumes_lifetime = cursor.fetchone()
+        cursor.execute("""
+                       SELECT
+                       strftime('%Y-%m-%d', Date),
+                       SUM(CASE WHEN pump_id = 1 THEN volume ELSE 0 END),
+                       SUM(CASE WHEN pump_id = 2 THEN volume ELSE 0 END)
+                       FROM transactions
+                       """)
+        diesel_volumes_daily = cursor.fetchone()
+        
+        #creates and puts volume 
+        lifetime_volume_diesel1_label = tk.Label(self.left_volume_frame,
+                                             text = f"Lifetime Volume Pump 1\n------------------------------\n{diesel_volumes_lifetime[0]} Liters",
+                                             fg = "#131414",
+                                             bg = '#3498db',
+                                             font=("Segoe UI", 14)
+                                            )
+        lifetime_volume_diesel1_label.grid(row=0, column=0, sticky="nsew", pady=30)
+        
+        lifetime_volume_diesel2_label = tk.Label(self.left_volume_frame,
+                                             text = f"Lifetime Volume Pump 2\n------------------------------\n{diesel_volumes_lifetime[1]} Liters",
+                                             fg = "#131414",
+                                             bg = '#3498db',
+                                             font=("Segoe UI", 14)
+                                            )
+        lifetime_volume_diesel2_label.grid(row=1, column=0, sticky="nsew", pady=30)
+        
+        daily_volume_diesel1_label = tk.Label(self.left_volume_frame,
+                                             text = f"Daily Volume Pump 1\n------------------------------\n{diesel_volumes_daily[1]} Liters",
+                                             fg = "#131414",
+                                             bg = '#3498db',
+                                             font=("Segoe UI", 14)
+                                            )
+        daily_volume_diesel1_label.grid(row=2, column=0, sticky="nsew", pady=30)
+        
+        daily_volume_diesel2_label = tk.Label(self.left_volume_frame,
+                                             text = f"Daily Volume Pump 2\n------------------------------\n{diesel_volumes_daily[2]} Liters",
+                                             fg = "#131414",
+                                             bg = '#3498db',
+                                             font=("Segoe UI", 14)
+                                            )
+        daily_volume_diesel2_label.grid(row=3, column=0, sticky="nsew", pady=30)
+        
+        #Center
+        self.center_income_frame = tk.Frame(self.lower_frame_center, bg = "#91C4EE", width = 250, height = 500, bd = 2, relief='solid')
+        self.center_income_frame.grid(row = 0, column = 0, sticky='nsew')
+        self.center_income_frame.grid_propagate(False)
+        self.center_income_frame.columnconfigure(0, weight= 1)
+        
+        self.center_volume_frame = tk.Frame(self.lower_frame_center, bg = "#91C4EE", width = 250, height = 500, bd = 2, relief='solid')
+        self.center_volume_frame.grid(row = 0, column = 1, sticky='nsew')
+        self.center_volume_frame.grid_propagate(False)
+        self.center_volume_frame.columnconfigure(0, weight= 1)
+        
+        #fetches income of premium based on time
+        cursor.execute("""
+                       SELECT strftime('%Y-%d', Date) as Daily_Date,
+                       SUM(CASE WHEN pump_id = 3 or pump_id = 4 or pump_id = 5 THEN price ELSE 0 END)
+                       FROM transactions
+                       """)
+        daily_premium_row = cursor.fetchone()
+        cursor.execute("""
+                       SELECT strftime('%Y-%W', Date) as Weekly_Date,
+                       SUM(CASE WHEN pump_id = 3 or pump_id = 4 or pump_id = 5 THEN price ELSE 0 END)
+                       FROM transactions
+                       """)
+        weekly_premium_row = cursor.fetchone()
+        cursor.execute("""
+                       SELECT strftime('%Y-%m', Date) as Monthly_Date,
+                       SUM(CASE WHEN pump_id = 3 or pump_id = 4 or pump_id = 5 THEN price ELSE 0 END)
+                       FROM transactions
+                       """)
+        monthly_premium_row = cursor.fetchone()
+        cursor.execute("""
+                       SELECT strftime('%Y', Date) as Monthly_Date,
+                       SUM(CASE WHEN pump_id = 3 or pump_id = 4 or pump_id = 5 THEN price ELSE 0 END)
+                       FROM transactions
+                       """)
+        yearly_premium_row = cursor.fetchone()
+        cursor.execute("""
+                       SELECT
+                       SUM(CASE WHEN pump_id = 3 or pump_id = 4 or pump_id = 5 THEN price ELSE 0 END)
+                       FROM transactions
+                       """)
+        lifetime_premium_row = cursor.fetchone()
+        
+        #creates and puts the income information into the labels
+        daily_income_premium_label = tk.Label(self.center_income_frame,
+                                             text = f"Daily Income \n-------------------------------\n₱{daily_premium_row[1]}",
+                                             fg = "#131414",
+                                             bg = '#3498db',
+                                             font=("Segoe UI", 14)
+                                            )
+        daily_income_premium_label.grid(row=0, column=0, sticky="nsew", pady=7)
+        
+        weekly_income_premium_label = tk.Label(self.center_income_frame,
+                                             text = f"Weekly Income \n-------------------------------\n₱{weekly_premium_row[1]}",
+                                             fg = "#131414",
+                                             bg = '#3498db',
+                                             font=("Segoe UI", 14)
+                                            )
+        weekly_income_premium_label.grid(row=1, column=0, sticky="nsew", pady=7)
+        
+        monthly_income_premium_label = tk.Label(self.center_income_frame,
+                                             text = f"Monthly Income \n-------------------------------\n₱{monthly_premium_row[1]}",
+                                             fg = "#131414",
+                                             bg = '#3498db',
+                                             font=("Segoe UI", 14)
+                                            )
+        monthly_income_premium_label.grid(row=2, column=0, sticky="nwsew", pady=7)
+        
+        yearly_income_premium_label = tk.Label(self.center_income_frame,
+                                             text = f"Yearly Income \n-------------------------------\n₱{yearly_premium_row[1]}",
+                                             fg = "#131414",
+                                             bg = '#3498db',
+                                             font=("Segoe UI", 14)
+                                            )
+        yearly_income_premium_label.grid(row=3, column=0, sticky="nsew", pady=7)
+        
+        lifetime_income_premium_label = tk.Label(self.center_income_frame,
+                                             text = f"Lifetime Income \n-------------------------------\n₱{lifetime_premium_row[0]}",
+                                             fg = "#131414",
+                                             bg = '#3498db',
+                                             font=("Segoe UI", 14)
+                                            )
+        lifetime_income_premium_label.grid(row=3, column=0, sticky="nsew", pady=7)
+        
+        #fetches both lifetime and daily volume
+        cursor.execute("""
+                       SELECT
+                       SUM(CASE WHEN pump_id = 3 THEN volume ELSE 0 END),
+                       SUM(CASE WHEN pump_id = 4 THEN volume ELSE 0 END),
+                       SUM(CASE WHEN pump_id = 5 THEN volume ELSE 0 END)
+                       FROM transactions
+                       """)
+        premium_volumes_lifetime = cursor.fetchone()
+        cursor.execute("""
+                       SELECT
+                       strftime('%Y-%m-%d', Date),
+                       SUM(CASE WHEN pump_id = 3 THEN volume ELSE 0 END),
+                       SUM(CASE WHEN pump_id = 4 THEN volume ELSE 0 END),
+                       SUM(CASE WHEN pump_id = 5 THEN volume ELSE 0 END)
+                       FROM transactions
+                       """)
+        premium_volumes_daily = cursor.fetchone()
+        
+        #creates and puts volume 
+        lifetime_volume_premium1_label = tk.Label(self.center_volume_frame,
+                                             text = f"Lifetime Volume Pump 1\n------------------------------\n{premium_volumes_lifetime[0]} Liters",
+                                             fg = "#131414",
+                                             bg = '#3498db',
+                                             font=("Segoe UI", 14)
+                                            )
+        lifetime_volume_premium1_label.grid(row=0, column=0, sticky="nsew", pady=7)
+        
+        lifetime_volume_premium2_label = tk.Label(self.center_volume_frame,
+                                             text = f"Lifetime Volume Pump 2\n------------------------------\n{premium_volumes_lifetime[1]} Liters",
+                                             fg = "#131414",
+                                             bg = '#3498db',
+                                             font=("Segoe UI", 14)
+                                            )
+        lifetime_volume_premium2_label.grid(row=1, column=0, sticky="nsew", pady=7)
+        
+        lifetime_volume_premium3_label = tk.Label(self.center_volume_frame,
+                                             text = f"Lifetime Volume Pump 3\n------------------------------\n{premium_volumes_lifetime[2]} Liters",
+                                             fg = "#131414",
+                                             bg = '#3498db',
+                                             font=("Segoe UI", 14)
+                                            )
+        lifetime_volume_premium3_label.grid(row=2, column=0, sticky="nsew", pady=7)
+        
+        daily_volume_premium1_label = tk.Label(self.center_volume_frame,
+                                             text = f"Daily Volume Pump 1\n------------------------------\n{premium_volumes_daily[1]} Liters",
+                                             fg = "#131414",
+                                             bg = '#3498db',
+                                             font=("Segoe UI", 14)
+                                            )
+        daily_volume_premium1_label.grid(row=3, column=0, sticky="nsew", pady=7)
+        
+        daily_volume_premium2_label = tk.Label(self.center_volume_frame,
+                                             text = f"Daily Volume Pump 2\n------------------------------\n{premium_volumes_daily[2]} Liters",
+                                             fg = "#131414",
+                                             bg = '#3498db',
+                                             font=("Segoe UI", 14)
+                                            )
+        daily_volume_premium2_label.grid(row=4, column=0, sticky="nsew", pady=7)
+        
+        daily_volume_premium3_label = tk.Label(self.center_volume_frame,
+                                             text = f"Daily Volume Pump 3\n------------------------------\n{premium_volumes_daily[3]} Liters",
+                                             fg = "#131414",
+                                             bg = '#3498db',
+                                             font=("Segoe UI", 14)
+                                            )
+        daily_volume_premium3_label.grid(row=5, column=0, sticky="nsew", pady=7)
+        
+        #Right
+        
+        self.right_income_frame = tk.Frame(self.lower_frame_right, bg = "#91C4EE", width = 250, height = 500, bd = 2, relief='solid')
+        self.right_income_frame.grid(row = 0, column = 0, sticky='nsew')
+        self.right_income_frame.grid_propagate(False)
+        self.right_income_frame.columnconfigure(0, weight= 1)
+        
+        self.right_volume_frame = tk.Frame(self.lower_frame_right, bg = "#91C4EE", width = 250, height = 500, bd = 2, relief='solid')
+        self.right_volume_frame.grid(row = 0, column = 1, sticky='nsew')
+        self.right_volume_frame.grid_propagate(False)
+        self.right_volume_frame.columnconfigure(0, weight= 1)
+        
+        #fetches income of unleaded based on time
+        cursor.execute("""
+                       SELECT strftime('%Y-%d', Date) as Daily_Date,
+                       SUM(CASE WHEN pump_id = 6 THEN price ELSE 0 END)
+                       FROM transactions
+                       """)
+        daily_unleaded_row = cursor.fetchone()
+        cursor.execute("""
+                       SELECT strftime('%Y-%W', Date) as Weekly_Date,
+                       SUM(CASE WHEN pump_id = 6 THEN price ELSE 0 END)
+                       FROM transactions
+                       """)
+        weekly_unleaded_row = cursor.fetchone()
+        cursor.execute("""
+                       SELECT strftime('%Y-%m', Date) as Monthly_Date,
+                       SUM(CASE WHEN pump_id = 6 THEN price ELSE 0 END)
+                       FROM transactions
+                       """)
+        monthly_unleaded_row = cursor.fetchone()
+        cursor.execute("""
+                       SELECT strftime('%Y', Date) as Monthly_Date,
+                       SUM(CASE WHEN pump_id = 6 THEN price ELSE 0 END)
+                       FROM transactions
+                       """)
+        yearly_unleaded_row = cursor.fetchone()
+        cursor.execute("""
+                       SELECT
+                       SUM(CASE WHEN pump_id = 6 THEN price ELSE 0 END)
+                       FROM transactions
+                       """)
+        lifetime_premium_row = cursor.fetchone()
+        
+        #creates and puts the income information into the labels
+        daily_income_unleaded_label = tk.Label(self.right_income_frame,
+                                             text = f"Daily Income \n-------------------------------\n₱{daily_unleaded_row[1]}",
+                                             fg = "#131414",
+                                             bg = '#3498db',
+                                             font=("Segoe UI", 14)
+                                            )
+        daily_income_unleaded_label.grid(row=0, column=0, sticky="nsew", pady=20)
+        
+        weekly_income_unleaded_label = tk.Label(self.right_income_frame,
+                                             text = f"Weekly Income \n-------------------------------\n₱{weekly_unleaded_row[1]}",
+                                             fg = "#131414",
+                                             bg = '#3498db',
+                                             font=("Segoe UI", 14)
+                                            )
+        weekly_income_unleaded_label.grid(row=1, column=0, sticky="nsew", pady=20)
+        
+        monthly_income_unleaded_label = tk.Label(self.right_income_frame,
+                                             text = f"Monthly Income \n-------------------------------\n₱{monthly_unleaded_row[1]}",
+                                             fg = "#131414",
+                                             bg = '#3498db',
+                                             font=("Segoe UI", 14)
+                                            )
+        monthly_income_unleaded_label.grid(row=2, column=0, sticky="nwsew", pady=20)
+        
+        yearly_income_unleaded_label = tk.Label(self.right_income_frame,
+                                             text = f"Yearly Income \n-------------------------------\n₱{yearly_unleaded_row[1]}",
+                                             fg = "#131414",
+                                             bg = '#3498db',
+                                             font=("Segoe UI", 14)
+                                            )
+        yearly_income_unleaded_label.grid(row=3, column=0, sticky="nsew", pady=20)
+        
+        lifetime_income_unleaded_label = tk.Label(self.right_income_frame,
+                                             text = f"Lifetime Income \n-------------------------------\n₱{lifetime_premium_row[0]}",
+                                             fg = "#131414",
+                                             bg = '#3498db',
+                                             font=("Segoe UI", 14)
+                                            )
+        lifetime_income_unleaded_label.grid(row=3, column=0, sticky="nsew", pady=20)
+        
+        #fetches both lifetime and daily volume
+        cursor.execute("""
+                       SELECT
+                       SUM(CASE WHEN pump_id = 6 THEN volume ELSE 0 END)
+                       FROM transactions
+                       """)
+        unleaded_volumes_lifetime = cursor.fetchone()
+        cursor.execute("""
+                       SELECT
+                       strftime('%Y-%m-%d', Date),
+                       SUM(CASE WHEN pump_id = 6 THEN volume ELSE 0 END)
+                       FROM transactions
+                       """)
+        unleaded_volumes_daily = cursor.fetchone()
+        
+        #creates and puts volume 
+        lifetime_volume_unleaded_label = tk.Label(self.right_volume_frame,
+                                             text = f"Lifetime Volume Pump 1\n------------------------------\n{unleaded_volumes_lifetime[0]} Liters",
+                                             fg = "#131414",
+                                             bg = '#3498db',
+                                             font=("Segoe UI", 14)
+                                            )
+        lifetime_volume_unleaded_label.grid(row=0, column=0, sticky="nsew", pady=20)
+        
+        daily_volume_unleaded_label = tk.Label(self.right_volume_frame,
+                                             text = f"Daily Volume Pump 1\n------------------------------\n{unleaded_volumes_daily[1]} Liters",
+                                             fg = "#131414",
+                                             bg = '#3498db',
+                                             font=("Segoe UI", 14)
+                                            )
+        daily_volume_unleaded_label.grid(row=1, column=0, sticky="nsew", pady=20)
+        
+        
+        conn.close()
+        
+
 
 # --- Run program ---
 setup_database()
